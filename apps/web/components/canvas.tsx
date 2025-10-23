@@ -5,40 +5,69 @@ import { useEffect, useRef } from "react";
 import { pencilDraw } from "../drawingLogic/pencil";
 import { useRecoilValue } from "recoil";
 import { toolSelected } from "../recoil/atoms";
+import { boxDraw } from "../drawingLogic/box";
 
 export default function Canvas() {
-    const c = useRef<HTMLCanvasElement>(null);
-    const ctx = useRef<CanvasRenderingContext2D | null>(null);
+    const mainCanvas = useRef<HTMLCanvasElement>(null);
+    const tempCanvas = useRef<HTMLCanvasElement>(null);
+    const mainCtx = useRef<CanvasRenderingContext2D | null>(null);
+    const tempCtx = useRef<CanvasRenderingContext2D | null>(null);
     const isPainting = useRef<boolean>(false);
     const currentToolSelected = useRecoilValue(toolSelected);
+    const startX = useRef<number>(0);
+    const startY = useRef<number>(0);
 
     useEffect(() => {
-        ctx.current = c.current!.getContext('2d');
+        mainCtx.current = mainCanvas.current!.getContext('2d');
+        tempCtx.current = tempCanvas.current!.getContext('2d');
 
-        c.current!.height = window.innerHeight;
-        c.current!.width = window.innerWidth;
+        mainCanvas.current!.height = window.innerHeight;
+        mainCanvas.current!.width = window.innerWidth;
+        tempCanvas.current!.height = window.innerHeight;
+        tempCanvas.current!.width = window.innerWidth;
     }, [])
 
     function startPainting(e: MouseEvent) {
         isPainting.current = true;
-        draw(e);
+
+        if (currentToolSelected === "pencil") {
+            draw(e);
+        } else if (currentToolSelected === "box") {
+            startX.current = e.clientX;
+            startY.current = e.clientY;
+            draw(e);
+        }
     }
 
-    function stopPainting() {
+    function stopPainting(e: MouseEvent) {
         isPainting.current = false;
-        ctx.current!.beginPath();
+
+        if (currentToolSelected === "pencil") {
+
+        } else if (currentToolSelected === "box") {
+            tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            mainCtx.current!.strokeRect(startX.current, startY.current, e.clientX - startX.current, e.clientY - startY.current);
+        }
+
+
+        mainCtx.current!.beginPath();
     }
 
     function draw(e: MouseEvent) {
-        if(!isPainting.current) return;
+        if (!isPainting.current) return;
         if (currentToolSelected === "pencil") {
-            pencilDraw(ctx, e.clientX, e.clientY);
+            pencilDraw(mainCtx, e.clientX, e.clientY);
+        } else if (currentToolSelected === "box") {
+            boxDraw(tempCtx, startX.current, startY.current, e);
         }
     }
 
     return (
         <>
-            <canvas onMouseDown={(e)=>startPainting(e)} onMouseUp={stopPainting} onMouseMove={(e)=>draw(e)} ref={c}></canvas>
+            <div className="relative w-screen h-screen">
+                <canvas ref={mainCanvas} className="absolute top-0 left-0 z-0" />
+                <canvas className="absolute top-0 left-0 z-10" onMouseDown={(e) => startPainting(e)} onMouseUp={(e) => stopPainting(e)} onMouseMove={(e) => draw(e)} ref={tempCanvas} />
+            </div>
         </>
     )
 }
