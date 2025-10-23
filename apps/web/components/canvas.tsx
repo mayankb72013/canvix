@@ -2,11 +2,15 @@
 
 import { MouseEvent } from "react";
 import { useEffect, useRef } from "react";
+import { pencilDraw } from "../drawingLogic/pencil";
+import { useRecoilValue } from "recoil";
+import { toolSelected } from "../recoil/atoms";
 
 export default function Canvas() {
     const c = useRef<HTMLCanvasElement>(null);
     const ctx = useRef<CanvasRenderingContext2D | null>(null);
     const isPainting = useRef<boolean>(false);
+    const currentToolSelected = useRecoilValue(toolSelected);
 
     useEffect(() => {
         ctx.current = c.current!.getContext('2d');
@@ -27,14 +31,9 @@ export default function Canvas() {
 
     function draw(e: MouseEvent) {
         if(!isPainting.current) return;
-
-        ctx.current!.lineWidth=10;
-        ctx.current!.lineCap="round"
-
-        ctx.current!.lineTo(e.clientX,e.clientY);
-        ctx.current!.stroke();
-        ctx.current!.beginPath();
-        ctx.current!.moveTo(e.clientX,e.clientY);
+        if (currentToolSelected === "pencil") {
+            pencilDraw(ctx, e.clientX, e.clientY);
+        }
     }
 
     return (

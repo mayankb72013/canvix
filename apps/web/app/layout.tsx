@@ -2,10 +2,10 @@
 import "@repo/ui/styles.css";
 import "./globals.css";
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Inter } from "next/font/google";
 import { RecoilRoot } from "recoil";
 
-const geist = Geist({ subsets: ["latin"] });
+const geist = Inter({ subsets: ["latin"] });
 
 // export const metadata: Metadata = {
 //   title: "Create Turborepo",
