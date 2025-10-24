@@ -6,6 +6,7 @@ import { pencilDraw } from "../drawingLogic/pencil";
 import { useRecoilValue } from "recoil";
 import { toolSelected } from "../recoil/atoms";
 import { boxDraw } from "../drawingLogic/box";
+import { ellipseDraw } from "../drawingLogic/ellipse";
 
 export default function Canvas() {
     const mainCanvas = useRef<HTMLCanvasElement>(null);
@@ -29,12 +30,14 @@ export default function Canvas() {
 
     function startPainting(e: MouseEvent) {
         isPainting.current = true;
+        startX.current = e.clientX;
+        startY.current = e.clientY;
 
         if (currentToolSelected === "pencil") {
             draw(e);
         } else if (currentToolSelected === "box") {
-            startX.current = e.clientX;
-            startY.current = e.clientY;
+            draw(e);
+        } else if (currentToolSelected === "ellipse") {
             draw(e);
         }
     }
@@ -43,12 +46,15 @@ export default function Canvas() {
         isPainting.current = false;
 
         if (currentToolSelected === "pencil") {
-
+            /* Nothing needed here as of yet */
         } else if (currentToolSelected === "box") {
             tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            mainCtx.current!.strokeRect(startX.current, startY.current, e.clientX - startX.current, e.clientY - startY.current);
+            mainCtx.current!.lineWidth = 10
+            boxDraw(mainCtx, startX.current, startY.current, e,false);
+        } else if (currentToolSelected === "ellipse") {
+            tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            ellipseDraw(mainCtx,startX.current,startY.current,e,false);
         }
-
 
         mainCtx.current!.beginPath();
     }
@@ -58,7 +64,9 @@ export default function Canvas() {
         if (currentToolSelected === "pencil") {
             pencilDraw(mainCtx, e.clientX, e.clientY);
         } else if (currentToolSelected === "box") {
-            boxDraw(tempCtx, startX.current, startY.current, e);
+            boxDraw(tempCtx, startX.current, startY.current, e,true);
+        } else if (currentToolSelected === "ellipse") {
+            ellipseDraw(tempCtx,startX.current,startY.current,e,true);
         }
     }
 

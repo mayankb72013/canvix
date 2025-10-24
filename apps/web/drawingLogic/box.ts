@@ -1,12 +1,15 @@
 import { MouseEvent } from "react";
 
-export function boxDraw(ctx: React.RefObject<CanvasRenderingContext2D | null>,startX: number,startY: number,e: MouseEvent) {
+export function boxDraw(ctx: React.RefObject<CanvasRenderingContext2D | null>,startX: number,startY: number,e: MouseEvent, clearFlag: boolean) {
 
     const mouseX = e.clientX-startX;
     const mouseY = e.clientY-startY;
     
-    ctx.current!.strokeStyle="black"
-    ctx.current!.clearRect(0,0,window.innerWidth,window.innerHeight);
+    ctx.current!.lineWidth=10
+
+    if (clearFlag) {
+        ctx.current!.clearRect(0,0,window.innerWidth,window.innerHeight);
+    }
     ctx.current!.strokeRect(startX,startY,mouseX,mouseY);
     // ctx.current!.beginPath();
 }
