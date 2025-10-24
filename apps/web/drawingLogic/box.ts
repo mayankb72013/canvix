@@ -5,7 +5,7 @@ export function boxDraw(ctx: React.RefObject<CanvasRenderingContext2D | null>,st
     const mouseX = e.clientX-startX;
     const mouseY = e.clientY-startY;
     
-    ctx.current!.lineWidth=10
+    ctx.current!.lineWidth=5
 
     if (clearFlag) {
         ctx.current!.clearRect(0,0,window.innerWidth,window.innerHeight);

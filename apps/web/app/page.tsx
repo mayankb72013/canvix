@@ -5,7 +5,7 @@ export default function Page() {
   return (
     <>
       <div className="relative flex justify-center">
-        <div className="absolute z-50 w-[30%] mt-4">
+        <div className="absolute z-50 w-[24%] mt-4">
           <Toolbar></Toolbar>
         </div>
         <div className="absolute z-0">

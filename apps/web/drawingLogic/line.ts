@@ -1,7 +1,7 @@
 import { MouseEvent } from "react";
 
 export function lineDraw(ctx: React.RefObject<CanvasRenderingContext2D | null>,startX: number,startY: number,e: MouseEvent, clearFlag: boolean) {
-    ctx.current!.lineWidth=8;
+    ctx.current!.lineWidth=5;
     ctx.current!.lineCap="round"
 
     if (clearFlag) {
