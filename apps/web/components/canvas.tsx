@@ -7,6 +7,7 @@ import { useRecoilValue } from "recoil";
 import { toolSelected } from "../recoil/atoms";
 import { boxDraw } from "../drawingLogic/box";
 import { ellipseDraw } from "../drawingLogic/ellipse";
+import { lineDraw } from "../drawingLogic/line";
 
 export default function Canvas() {
     const mainCanvas = useRef<HTMLCanvasElement>(null);
@@ -33,13 +34,7 @@ export default function Canvas() {
         startX.current = e.clientX;
         startY.current = e.clientY;
 
-        if (currentToolSelected === "pencil") {
-            draw(e);
-        } else if (currentToolSelected === "box") {
-            draw(e);
-        } else if (currentToolSelected === "ellipse") {
-            draw(e);
-        }
+        draw(e);
     }
 
     function stopPainting(e: MouseEvent) {
@@ -49,13 +44,14 @@ export default function Canvas() {
             /* Nothing needed here as of yet */
         } else if (currentToolSelected === "box") {
             tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            mainCtx.current!.lineWidth = 10
             boxDraw(mainCtx, startX.current, startY.current, e,false);
         } else if (currentToolSelected === "ellipse") {
             tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
             ellipseDraw(mainCtx,startX.current,startY.current,e,false);
+        } else if (currentToolSelected === "line") {
+            tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            lineDraw(mainCtx,startX.current,startY.current,e,false);
         }
-
         mainCtx.current!.beginPath();
     }
 
@@ -67,6 +63,8 @@ export default function Canvas() {
             boxDraw(tempCtx, startX.current, startY.current, e,true);
         } else if (currentToolSelected === "ellipse") {
             ellipseDraw(tempCtx,startX.current,startY.current,e,true);
+        } else if (currentToolSelected === "line") {
+            lineDraw(tempCtx,startX.current,startY.current,e,true);
         }
     }
 

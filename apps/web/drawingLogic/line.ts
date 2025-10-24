@@ -1,0 +1,14 @@
+import { MouseEvent } from "react";
+
+export function lineDraw(ctx: React.RefObject<CanvasRenderingContext2D | null>,startX: number,startY: number,e: MouseEvent, clearFlag: boolean) {
+    ctx.current!.lineWidth=8;
+    ctx.current!.lineCap="round"
+
+    if (clearFlag) {
+        ctx.current!.clearRect(0,0,window.innerWidth,window.innerHeight);
+    }
+    ctx.current!.beginPath();
+    ctx.current!.moveTo(startX,startY);
+    ctx.current!.lineTo(e.clientX,e.clientY);
+    ctx.current!.stroke();
+}
