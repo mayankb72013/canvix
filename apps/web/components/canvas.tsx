@@ -3,8 +3,8 @@
 import { MouseEvent } from "react";
 import { useEffect, useRef } from "react";
 import { pencilDraw } from "../drawingLogic/pencil";
-import { useRecoilValue } from "recoil";
-import { toolSelected } from "../recoil/atoms";
+import { useRecoilState, useRecoilValue } from "recoil";
+import { clearCanvas, toolSelected } from "../recoil/atoms";
 import { boxDraw } from "../drawingLogic/box";
 import { ellipseDraw } from "../drawingLogic/ellipse";
 import { lineDraw } from "../drawingLogic/line";
@@ -19,7 +19,14 @@ export default function Canvas() {
     const startX = useRef<number>(0);
     const startY = useRef<number>(0);
 
+    const [isClearCanvas,setClearCanvas] = useRecoilState(clearCanvas);
     useEffect(() => {
+
+        if (isClearCanvas) {
+            mainCtx.current!.clearRect(0,0,window.innerWidth,window.innerHeight);
+            setClearCanvas(false);
+        }
+
         mainCtx.current = mainCanvas.current!.getContext('2d');
         tempCtx.current = tempCanvas.current!.getContext('2d');
 
@@ -27,10 +34,11 @@ export default function Canvas() {
         mainCanvas.current!.width = window.innerWidth;
         tempCanvas.current!.height = window.innerHeight;
         tempCanvas.current!.width = window.innerWidth;
-    }, [])
+    }, [isClearCanvas])
 
     function startPainting(e: MouseEvent) {
         isPainting.current = true;
+
         startX.current = e.clientX;
         startY.current = e.clientY;
 

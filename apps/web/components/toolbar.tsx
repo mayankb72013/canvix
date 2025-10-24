@@ -3,7 +3,7 @@
 import Box from "@repo/ui/box";
 import Pencil from "@repo/ui/pencil";
 import { useSetRecoilState } from "recoil";
-import { toolSelected } from "../recoil/atoms";
+import { clearCanvas, toolSelected } from "../recoil/atoms";
 import Ellipse from "@repo/ui/ellipse";
 import Line from "@repo/ui/line";
 import Text from "@repo/ui/text";
@@ -15,6 +15,7 @@ import DeleteBox from "@repo/ui/delete";
 export default function Toolbar() {
 
     const setCurrentTool = useSetRecoilState(toolSelected);
+    const setClearCanvas = useSetRecoilState(clearCanvas);
 
     return (
         <>
@@ -34,7 +35,7 @@ export default function Toolbar() {
 
                 <div className="w-px py-3 bg-gray-200 self-stretch"></div>
 
-                <button className="size-5 text-red-500 cursor-pointer" onClick={() => setCurrentTool("clearCanvas")}><DeleteBox /></button>
+                <button className="size-5 text-red-500 cursor-pointer" onClick={() => setClearCanvas(true)}><DeleteBox /></button>
 
             </div>
 
