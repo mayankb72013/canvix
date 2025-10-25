@@ -1,9 +1,9 @@
 import { MouseEvent } from "react";
 
-export function boxDraw(ctx: React.RefObject<CanvasRenderingContext2D | null>,startX: number,startY: number,e: MouseEvent, clearFlag: boolean) {
+export function boxDraw(ctx: React.RefObject<CanvasRenderingContext2D | null>,startX: number,startY: number,endX: number, endY: number, clearFlag: boolean) {
 
-    const mouseX = e.clientX-startX;
-    const mouseY = e.clientY-startY;
+    const mouseX = endX-startX;
+    const mouseY = endY-startY;
     
     ctx.current!.lineWidth=5
 

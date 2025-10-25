@@ -1,6 +1,6 @@
 import { MouseEvent } from "react";
 
-export function lineDraw(ctx: React.RefObject<CanvasRenderingContext2D | null>,startX: number,startY: number,e: MouseEvent, clearFlag: boolean) {
+export function lineDraw(ctx: React.RefObject<CanvasRenderingContext2D | null>,startX: number,startY: number,endX: number, endY: number, clearFlag: boolean) {
     ctx.current!.lineWidth=5;
     ctx.current!.lineCap="round"
 
@@ -9,6 +9,6 @@ export function lineDraw(ctx: React.RefObject<CanvasRenderingContext2D | null>,s
     }
     ctx.current!.beginPath();
     ctx.current!.moveTo(startX,startY);
-    ctx.current!.lineTo(e.clientX,e.clientY);
+    ctx.current!.lineTo(endX,endY);
     ctx.current!.stroke();
 }

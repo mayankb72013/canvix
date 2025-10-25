@@ -11,19 +11,23 @@ import SelectionTool from "@repo/ui/selection_arrow";
 import Undo from "@repo/ui/undo";
 import Redo from "@repo/ui/redo";
 import DeleteBox from "@repo/ui/delete";
+import { useUndoHandler } from "../app/utils/undo";
+import { useRedoHandler } from "../app/utils/redo";
 
 export default function Toolbar() {
 
     const setCurrentTool = useSetRecoilState(toolSelected);
     const setClearCanvas = useSetRecoilState(clearCanvas);
 
+    const handleRedo = useRedoHandler();
+    const handleUndo = useUndoHandler();
     return (
         <>
-            <div className="h-full flex items-center border border-gray-100 text-neutral-700 rounded-md shadow-sm px-2 py-3 flex justify-center items-center gap-5">
+            <div className="h-full flex items-center border border-gray-100 text-neutral-700 rounded-lg shadow-sm px-2 py-3 flex justify-center items-center gap-6">
                 
-                <button className="size-5 cursor-pointer" onClick={() => setCurrentTool("select")}><SelectionTool /></button>
-                <button className="size-5 cursor-pointer" onClick={() => setCurrentTool("undo")}><Undo /></button>
-                <button className="size-5 cursor-pointer" onClick={() => setCurrentTool("redo")}><Redo /></button>
+                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("select")}}><SelectionTool /></button>
+                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("undo"); handleUndo()}}><Undo /></button>
+                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("redo"); handleRedo()}}><Redo /></button>
 
                 {/* <div className="w-px py-3 bg-gray-200 self-stretch"></div> */}
 

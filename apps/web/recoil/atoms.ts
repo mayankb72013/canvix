@@ -11,12 +11,13 @@ export const clearCanvas = atom({
     default: false
 })
 
-export const undoStack = atom<Shape[]>({
-    key: "undoStack",
+
+export const shapesArray = atom<Shape[]>({
+    key: "shapesArray",
     default: []
 })
 
-export const redoStack = atom<Shape[]>({
-    key: "redoStack",
-    default: []
+export const shapesChange = atom<boolean>({
+    key: "shapesChange",
+    default: false
 })
