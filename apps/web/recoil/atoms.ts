@@ -3,7 +3,7 @@ import { Shape, Tools, Types } from "../app/types/types";
 
 export const toolSelected = atom<Types | Tools>({
     key: "toolSelected",
-    default: "pencil"
+    default: "select"
 })
 
 export const clearCanvas = atom({
@@ -20,4 +20,19 @@ export const shapesArray = atom<Shape[]>({
 export const shapesChange = atom<boolean>({
     key: "shapesChange",
     default: false
+})
+
+export const crosshairState = atom<boolean>({
+    key: "crosshairState",
+    default: false
+})
+
+export const strokeColor = atom({
+    key: "strokeColor",
+    default: '#000000'
+})
+
+export const strokeWidth = atom({
+    key: "strokeWidth",
+    default: 4
 })

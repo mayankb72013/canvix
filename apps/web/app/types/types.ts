@@ -6,9 +6,10 @@ export type Shape = {
     endY?: number;
     path?: Path2D; //For freehand pencil
     color?: string;
-    lineWidth?: number;
+    strokeWidth?: number;
+    strokeColor?: string;
 };
 
 export type Types = "pencil" | "box" | "ellipse" | "line" | "text"
 
-export type Tools = "select" | "undo" | "redo"
+export type Tools = "select" 
