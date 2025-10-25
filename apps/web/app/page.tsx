@@ -14,8 +14,8 @@ export default function Page() {
   return (
     <>
       <div onKeyDown={(e)=>{
-        if(e.ctrlKey && e.key === "z") handleUndo();
-        else if(e.ctrlKey && e.key === "y") handleRedo();
+        if(e.ctrlKey && e.key.toLowerCase() === "z") handleUndo();
+        else if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "z") handleRedo();
       }} tabIndex={0} className="relative flex justify-center">
         <div className="absolute z-50 w-[25%] mt-4">
           <Toolbar></Toolbar>

@@ -47,7 +47,6 @@ export default function Canvas() {
             tempCanvas.current!.width = window.innerWidth;
             tempCanvas.current!.height = window.innerHeight;
 
-            // redraw shapes after resize
             reDrawCanvas(mainCtx, shapes);
         };
 
@@ -61,7 +60,7 @@ export default function Canvas() {
     useEffect(() => {
         if (isClearCanvas) {
             mainCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            setClearCanvas(false); // reset immediately
+            setClearCanvas(false); 
         }
     }, [isClearCanvas]);
 
@@ -70,7 +69,7 @@ export default function Canvas() {
         if (shapesChanged) {
             mainCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
             reDrawCanvas(mainCtx, shapes);
-            setShapesChanged(false); // reset immediately
+            setShapesChanged(false);
         }
     }, [shapesChanged]);
 
@@ -111,46 +110,55 @@ export default function Canvas() {
             pencilDraw(mainCtx, startX.current, startY.current, currentPath.current as Path2D, false);
 
         } else if (currentToolSelected === "box") {
-            setShapes(s => [...s, {
-                type: "box",
-                startX: startX.current,
-                startY: startY.current,
-                endX: e.clientX,
-                endY: e.clientY
-            }])
-            undo.push([...shapes]);
+            setShapes(s => {
+                const newShapes: Shape[] = [...s,{
+                    type: "box",
+                    startX: startX.current,
+                    startY: startY.current,
+                    endX: e.clientX,
+                    endY: e.clientY
+                }]
+                undo.push(newShapes);
+                return newShapes;
+            })
             redo.length = 0;
 
             tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
             boxDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false);
         } else if (currentToolSelected === "ellipse") {
-            setShapes(s => [...s, {
-                type: "ellipse",
-                startX: startX.current,
-                startY: startY.current,
-                endX: e.clientX,
-                endY: e.clientY
-            }])
-            undo.push([...shapes]);
+            setShapes(s => {
+                const newShapes: Shape[] = [...s,{
+                    type: "ellipse",
+                    startX: startX.current,
+                    startY: startY.current,
+                    endX: e.clientX,
+                    endY: e.clientY
+                }]
+                undo.push(newShapes);
+                return newShapes;
+            })
             redo.length = 0;
 
             tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
             ellipseDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false);
         } else if (currentToolSelected === "line") {
-            setShapes(s => [...s, {
-                type: "line",
-                startX: startX.current,
-                startY: startY.current,
-                endX: e.clientX,
-                endY: e.clientY
-            }])
-            undo.push([...shapes]);
+            setShapes(s => {
+                const newShapes: Shape[] = [...s,{
+                    type: "line",
+                    startX: startX.current,
+                    startY: startY.current,
+                    endX: e.clientX,
+                    endY: e.clientY
+                }]
+                undo.push(newShapes);
+                return newShapes;
+            })
             redo.length = 0;
 
             tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
             lineDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false);
         } else if (currentToolSelected === "text") {
-
+            
         }
         mainCtx.current!.beginPath();
     }
