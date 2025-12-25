@@ -3,7 +3,7 @@
 import Box from "@repo/ui/box";
 import Pencil from "@repo/ui/pencil";
 import { useSetRecoilState } from "recoil";
-import { clearCanvas, crosshairState, toolSelected } from "../recoil/atoms";
+import { clearCanvas, cursorState, toolSelected } from "../recoil/atoms";
 import Ellipse from "@repo/ui/ellipse";
 import Line from "@repo/ui/line";
 import Text from "@repo/ui/text";
@@ -22,26 +22,26 @@ export default function Toolbar() {
     const handleRedo = useRedoHandler();
     const handleUndo = useUndoHandler();
 
-    const setCrosshair = useSetRecoilState(crosshairState);
+    const setCurrentCursor = useSetRecoilState(cursorState);
     return (
         <>
             <div className="h-full flex items-center border border-gray-100 text-neutral-700 rounded-lg shadow-sm px-2 py-3 flex justify-center items-center gap-6">
                 
-                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("select"); setCrosshair(false)}}><SelectionTool /></button>
+                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("select"); setCurrentCursor("cursor-default")}}><SelectionTool /></button>
                 <button className="size-5 cursor-pointer" onClick={() => {handleUndo()}}><Undo /></button>
                 <button className="size-5 cursor-pointer" onClick={() => {handleRedo()}}><Redo /></button>
 
                 {/* <div className="w-px py-3 bg-gray-200 self-stretch"></div> */}
 
-                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("pencil"); setCrosshair(true)}}><Pencil /></button>
-                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("box"); setCrosshair(true)}}><Box /></button>
-                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("ellipse"); setCrosshair(true)}}><Ellipse /></button>
-                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("line"); setCrosshair(true)}}><Line /></button>
-                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("text"); setCrosshair(true)}}><Text /></button>
+                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("pencil"); setCurrentCursor("cursor-crosshair")}}><Pencil /></button>
+                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("box"); setCurrentCursor("cursor-crosshair")}}><Box /></button>
+                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("ellipse"); setCurrentCursor("cursor-crosshair")}}><Ellipse /></button>
+                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("line"); setCurrentCursor("cursor-crosshair")}}><Line /></button>
+                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("text"); setCurrentCursor("cursor-crosshair")}}><Text /></button>
 
                 <div className="w-px py-3 bg-gray-200 self-stretch"></div>
 
-                <button className="size-5 text-red-500 cursor-pointer" onClick={() => {setClearCanvas(true); setCrosshair(false)}}><DeleteBox /></button>
+                <button className="size-5 text-red-500 cursor-pointer" onClick={() => {setClearCanvas(true); setCurrentCursor("cursor-default")}}><DeleteBox /></button>
 
             </div>
 

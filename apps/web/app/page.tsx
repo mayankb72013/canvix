@@ -15,8 +15,8 @@ export default function Page() {
   return (
     <>
       <div onKeyDown={(e)=>{
-        if(e.ctrlKey && e.key.toLowerCase() === "z") handleUndo();
-        else if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "z") handleRedo();
+        if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "z") handleRedo();
+        else if(e.ctrlKey && e.key.toLowerCase() === "z") handleUndo();
       }} tabIndex={0} className="relative h-screen w-screen overflow-hidden outline-none">
         <div className="absolute top-2 left-[38%] z-50 w-[25%] mt-4 z-50 bg-white">
           <Toolbar></Toolbar>

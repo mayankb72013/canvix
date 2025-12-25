@@ -4,7 +4,7 @@ import { MouseEvent, useState } from "react";
 import { useEffect, useRef } from "react";
 import { pencilDraw } from "../drawingLogic/pencil";
 import { useRecoilState, useRecoilValue } from "recoil";
-import { clearCanvas, crosshairState, shapesArray, shapesChange, strokeColor, strokeWidth, toolSelected, } from "../recoil/atoms";
+import { clearCanvas, cursorState, shapeId, shapesArray, shapesChange, shapeSelected, strokeColor, strokeWidth, toolSelected, } from "../recoil/atoms";
 import { boxDraw } from "../drawingLogic/box";
 import { ellipseDraw } from "../drawingLogic/ellipse";
 import { lineDraw } from "../drawingLogic/line";
@@ -12,6 +12,8 @@ import { Shape } from "../app/types/types";
 import { reDrawCanvas } from "../app/utils/redraw";
 import { undo } from "../app/undo-redo/redo";
 import { redo } from "../app/undo-redo/undo";
+import useSelect from "../tools/select";
+import BoundingBox from "../tools/boundingBox";
 
 export default function Canvas() {
     const mainCanvas = useRef<HTMLCanvasElement>(null);
@@ -26,6 +28,7 @@ export default function Canvas() {
 
     const [shapes, setShapes] = useRecoilState(shapesArray);
     const [shapesChanged, setShapesChanged] = useRecoilState(shapesChange);
+    const [shapesId, setShapesId] = useRecoilState(shapeId);
 
     const currentStrokeColor = useRecoilValue(strokeColor);
     const currentStrokeWidth = useRecoilValue(strokeWidth);
@@ -39,7 +42,10 @@ export default function Canvas() {
 
     const [isClearCanvas, setClearCanvas] = useRecoilState(clearCanvas);
 
-    const [isCrosshair, setIsCrosshair] = useRecoilState(crosshairState);
+    const currentCursor = useRecoilValue(cursorState);
+    const handleSelect = useSelect();
+    const selectedShape = useRecoilValue(shapeSelected);
+
     useEffect(() => {
         mainCtx.current = mainCanvas.current!.getContext('2d');
         tempCtx.current = tempCanvas.current!.getContext('2d');
@@ -63,7 +69,7 @@ export default function Canvas() {
     useEffect(() => {
         if (isClearCanvas) {
             mainCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            setClearCanvas(false); 
+            setClearCanvas(false);
         }
     }, [isClearCanvas]);
 
@@ -77,6 +83,16 @@ export default function Canvas() {
     }, [shapesChanged]);
 
     function startPainting(e: MouseEvent) {
+
+        if (currentToolSelected === "select") {
+            handleSelect(mainCtx, tempCtx, e.clientX, e.clientY);
+            // if (selectedShape !== undefined) {
+            //     BoundingBox(tempCtx,selectedShape,false);
+            // } else {
+            //     tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerWidth);
+            // }
+        }
+
         isPainting.current = true;
 
         startX.current = e.clientX;
@@ -100,6 +116,7 @@ export default function Canvas() {
 
             setShapes(prev => {
                 const newShapes: Shape[] = [...prev, {
+                    id: shapesId,
                     type: "pencil",
                     path: currentPath.current as Path2D,
                     strokeColor: currentStrokeColor,
@@ -109,14 +126,15 @@ export default function Canvas() {
                 return newShapes;
             });
             redo.length = 0;
-
+            setShapesId(s => s + 1);
 
             tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            pencilDraw(mainCtx, startX.current, startY.current, currentPath.current as Path2D, false,currentStrokeColor,currentStrokeWidth);
+            pencilDraw(mainCtx, startX.current, startY.current, currentPath.current as Path2D, false, currentStrokeColor, currentStrokeWidth);
 
         } else if (currentToolSelected === "box") {
             setShapes(s => {
-                const newShapes: Shape[] = [...s,{
+                const newShapes: Shape[] = [...s, {
+                    id: shapesId,
                     type: "box",
                     startX: startX.current,
                     startY: startY.current,
@@ -129,17 +147,20 @@ export default function Canvas() {
                 return newShapes;
             })
             redo.length = 0;
+            setShapesId(s => s + 1);
 
             tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            boxDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false,currentStrokeColor,currentStrokeWidth);
+            boxDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
         } else if (currentToolSelected === "ellipse") {
             setShapes(s => {
-                const newShapes: Shape[] = [...s,{
+                const newShapes: Shape[] = [...s, {
+                    id: shapesId,
                     type: "ellipse",
                     startX: startX.current,
                     startY: startY.current,
                     endX: e.clientX,
                     endY: e.clientY,
+                    rotation: 0,
                     strokeColor: currentStrokeColor,
                     strokeWidth: currentStrokeWidth,
                 }]
@@ -147,12 +168,14 @@ export default function Canvas() {
                 return newShapes;
             })
             redo.length = 0;
+            setShapesId(s => s + 1);
 
             tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            ellipseDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false,currentStrokeColor,currentStrokeWidth);
+            ellipseDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
         } else if (currentToolSelected === "line") {
             setShapes(s => {
-                const newShapes: Shape[] = [...s,{
+                const newShapes: Shape[] = [...s, {
+                    id: shapesId,
                     type: "line",
                     startX: startX.current,
                     startY: startY.current,
@@ -165,9 +188,10 @@ export default function Canvas() {
                 return newShapes;
             })
             redo.length = 0;
+            setShapesId(s => s + 1);
 
             tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            lineDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false,currentStrokeColor,currentStrokeWidth);
+            lineDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
         } else if (currentToolSelected === "text") {
 
         }
@@ -177,21 +201,21 @@ export default function Canvas() {
     function draw(e: MouseEvent) {
         if (!isPainting.current) return;
         if (currentToolSelected === "pencil") {
-            pencilDraw(tempCtx, e.clientX, e.clientY, currentPath.current as Path2D, true,currentStrokeColor,currentStrokeWidth);
+            pencilDraw(tempCtx, e.clientX, e.clientY, currentPath.current as Path2D, true, currentStrokeColor, currentStrokeWidth);
         } else if (currentToolSelected === "box") {
-            boxDraw(tempCtx, startX.current, startY.current, e.clientX, e.clientY, true,currentStrokeColor,currentStrokeWidth);
+            boxDraw(tempCtx, startX.current, startY.current, e.clientX, e.clientY, true, currentStrokeColor, currentStrokeWidth);
         } else if (currentToolSelected === "ellipse") {
-            ellipseDraw(tempCtx, startX.current, startY.current, e.clientX, e.clientY, true,currentStrokeColor,currentStrokeWidth);
+            ellipseDraw(tempCtx, startX.current, startY.current, e.clientX, e.clientY, true, currentStrokeColor, currentStrokeWidth);
         } else if (currentToolSelected === "line") {
-            lineDraw(tempCtx, startX.current, startY.current, e.clientX, e.clientY, true,currentStrokeColor,currentStrokeWidth);
+            lineDraw(tempCtx, startX.current, startY.current, e.clientX, e.clientY, true, currentStrokeColor, currentStrokeWidth);
         }
     }
 
     return (
         <>
             <div className="relative w-screen h-screen">
-                <canvas ref={mainCanvas} className={`absolute top-0 left-0 z-0 ${(isCrosshair?'cursor-crosshair':'')}`} />
-                <canvas className={`absolute top-0 left-0 z-10 ${(isCrosshair?'cursor-crosshair':'')}`} onMouseDown={(e) => startPainting(e)} onMouseUp={(e) => stopPainting(e)} onMouseMove={(e) => draw(e)} ref={tempCanvas} />
+                <canvas ref={mainCanvas} className={`absolute top-0 left-0 z-0 ${currentCursor}`} />
+                <canvas className={`absolute top-0 left-0 z-10 ${currentCursor}`} onMouseDown={(e) => startPainting(e)} onMouseUp={(e) => stopPainting(e)} onMouseMove={(e) => draw(e)} ref={tempCanvas} />
                 {currentToolSelected === "text" && textInput.visible && (
                     <textarea
                         className="absolute border px-1 py-0.5 text-sm text-black z-20 bg-white"

@@ -1,11 +1,21 @@
 import { atom } from "recoil";
-import { Shape, Tools, Types } from "../app/types/types";
+import { CursorTypes, Shape, Tools, Types } from "../app/types/types";
+import { devNull } from "node:os";
 
 export const toolSelected = atom<Types | Tools>({
     key: "toolSelected",
     default: "select"
 })
 
+export const shapeId = atom<number>({
+    key: "shapeId",
+    default: 0
+})
+
+export const shapeSelected = atom<Shape>({
+    key: "shapeSelected",
+    default: undefined
+})
 export const clearCanvas = atom({
     key: "clearCanvas",
     default: false
@@ -22,9 +32,9 @@ export const shapesChange = atom<boolean>({
     default: false
 })
 
-export const crosshairState = atom<boolean>({
-    key: "crosshairState",
-    default: false
+export const cursorState = atom<CursorTypes>({
+    key: "cursorState",
+    default: "cursor-default"
 })
 
 export const strokeColor = atom({
