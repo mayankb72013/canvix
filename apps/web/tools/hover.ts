@@ -4,15 +4,13 @@ import { shapesArray, shapeSelected } from "../recoil/atoms";
 import { Shape } from "../app/types/types";
 import BoundingBox from "./boundingBox";
 
-export default function useSelect() {
+export default function useHover() {
     const shapes = useRecoilValue(shapesArray);
     const setSelectedShape = useSetRecoilState(shapeSelected);
 
 
-    function handleSelect(ctx: React.RefObject<CanvasRenderingContext2D | null>, tempCtx: React.RefObject<CanvasRenderingContext2D | null>, clientX: number, clientY: number) {
+    function handleHover(ctx: React.RefObject<CanvasRenderingContext2D | null>, clientX: number, clientY: number) {
 
-        tempCtx.current!.lineWidth = 2
-        tempCtx.current!.strokeStyle = "#2684ff"
 
         const hits = shapes.filter((shape) => {
 
@@ -70,14 +68,12 @@ export default function useSelect() {
 
         const currentShape = hits.pop();
         if (currentShape) {
-            BoundingBox(tempCtx, currentShape, true);
-            setSelectedShape(currentShape);
-            BoundingBox(tempCtx, currentShape, false);
+            return true;
         } else {
-            BoundingBox(tempCtx, currentShape, true);
+            return false;
         }
 
     }
 
-    return handleSelect;
+    return handleHover;
 }

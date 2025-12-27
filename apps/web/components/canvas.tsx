@@ -14,6 +14,7 @@ import { undo } from "../app/undo-redo/redo";
 import { redo } from "../app/undo-redo/undo";
 import useSelect from "../tools/select";
 import BoundingBox from "../tools/boundingBox";
+import useHover from "../tools/hover";
 
 export default function Canvas() {
     const mainCanvas = useRef<HTMLCanvasElement>(null);
@@ -39,12 +40,15 @@ export default function Canvas() {
         visible: boolean;
     }>({ x: 0, y: 0, visible: false });
 
+    let minX: number, minY: number, maxX: number, maxY: number;
+
 
     const [isClearCanvas, setClearCanvas] = useRecoilState(clearCanvas);
 
-    const currentCursor = useRecoilValue(cursorState);
+    const [currentCursor,setCurrentCursor] = useRecoilState(cursorState);
     const handleSelect = useSelect();
-    const selectedShape = useRecoilValue(shapeSelected);
+    const handleHover = useHover();
+    // const selectedShape = useRecoilValue(shapeSelected);
 
     useEffect(() => {
         mainCtx.current = mainCanvas.current!.getContext('2d');
@@ -69,6 +73,7 @@ export default function Canvas() {
     useEffect(() => {
         if (isClearCanvas) {
             mainCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
             setClearCanvas(false);
         }
     }, [isClearCanvas]);
@@ -86,11 +91,6 @@ export default function Canvas() {
 
         if (currentToolSelected === "select") {
             handleSelect(mainCtx, tempCtx, e.clientX, e.clientY);
-            // if (selectedShape !== undefined) {
-            //     BoundingBox(tempCtx,selectedShape,false);
-            // } else {
-            //     tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerWidth);
-            // }
         }
 
         isPainting.current = true;
@@ -102,6 +102,10 @@ export default function Canvas() {
             setTextInput({ x: e.clientX, y: e.clientY, visible: true });
             isPainting.current = false; // stop further drawing
         } else if (currentToolSelected === "pencil") {
+            minX = e.clientX;
+            minY = e.clientY;
+            maxX = 0;
+            maxY = 0;
             currentPath.current = new Path2D();
             draw(e);
         } else {
@@ -111,7 +115,6 @@ export default function Canvas() {
 
     function stopPainting(e: MouseEvent) {
         isPainting.current = false;
-
         if (currentToolSelected === "pencil") {
 
             setShapes(prev => {
@@ -121,6 +124,10 @@ export default function Canvas() {
                     path: currentPath.current as Path2D,
                     strokeColor: currentStrokeColor,
                     strokeWidth: currentStrokeWidth,
+                    startX: minX,
+                    startY: minY,
+                    endX: maxX,
+                    endY: maxY
                 }];
                 undo.push(newShapes);
                 return newShapes;
@@ -199,8 +206,23 @@ export default function Canvas() {
     }
 
     function draw(e: MouseEvent) {
-        if (!isPainting.current) return;
+        if (!isPainting.current) {
+            const isShape = handleHover(tempCtx, e.clientX, e.clientY);
+            if (isShape) {
+                setCurrentCursor("cursor-move");
+            } else if (currentToolSelected !== "select") {
+                setCurrentCursor("cursor-crosshair");
+            } else {
+                setCurrentCursor("cursor-default")
+            }
+            return ;
+        };
         if (currentToolSelected === "pencil") {
+            minX = Math.min(e.clientX,minX);
+            minY = Math.min(e.clientY,minY);
+            maxX = Math.max(e.clientX,maxX);
+            maxY = Math.max(e.clientY,maxY);
+            
             pencilDraw(tempCtx, e.clientX, e.clientY, currentPath.current as Path2D, true, currentStrokeColor, currentStrokeWidth);
         } else if (currentToolSelected === "box") {
             boxDraw(tempCtx, startX.current, startY.current, e.clientX, e.clientY, true, currentStrokeColor, currentStrokeWidth);
@@ -215,7 +237,7 @@ export default function Canvas() {
         <>
             <div className="relative w-screen h-screen">
                 <canvas ref={mainCanvas} className={`absolute top-0 left-0 z-0 ${currentCursor}`} />
-                <canvas className={`absolute top-0 left-0 z-10 ${currentCursor}`} onMouseDown={(e) => startPainting(e)} onMouseUp={(e) => stopPainting(e)} onMouseMove={(e) => draw(e)} ref={tempCanvas} />
+                <canvas className={`absolute top-0 left-0 z-10 ${currentCursor}`} onMouseDown={(e) => startPainting(e)} onMouseUp={(e) => stopPainting(e)} onMouseMove={(e) => draw(e)} ref={tempCanvas}/>
                 {currentToolSelected === "text" && textInput.visible && (
                     <textarea
                         className="absolute border px-1 py-0.5 text-sm text-black z-20 bg-white"

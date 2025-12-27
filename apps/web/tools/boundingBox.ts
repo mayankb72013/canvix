@@ -3,43 +3,46 @@ import { Shape } from "../app/types/types";
 export default function BoundingBox(ctx: React.RefObject<CanvasRenderingContext2D | null>, shape?: Shape, clearFlag?: boolean) {
 
     if (clearFlag) {
-        ctx.current?.clearRect(0,0,window.innerWidth,window.innerHeight);
+        ctx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
     }
     ctx.current!.lineWidth = 2
     ctx.current!.strokeStyle = "#2684ff"
     ctx.current!.fillStyle = "#ffffff"
 
+    let minX;
+    let minY;
+    let maxX;
+    let maxY;
+
+    const HANDLE_SIZE = 8;
+    const HANDLE_HALF = HANDLE_SIZE / 2;
+    const BOX_PADDING = 8;
+
     if (shape?.type === "text") {
+         
+    }  else {
+        minX = Math.min(shape?.startX!, shape?.endX!);
+        minY = Math.min(shape?.startY!, shape?.endY!);
+        maxX = Math.max(shape?.startX!, shape?.endX!);
+        maxY = Math.max(shape?.startY!, shape?.endY!);
+        //total box
+        ctx.current!.strokeRect(minX! - BOX_PADDING, minY! - BOX_PADDING, maxX - minX! + BOX_PADDING * 2, maxY - minY  + BOX_PADDING * 2);
+        //border boxes
 
-    } else if (shape?.type === "pencil") {
+        // Top-Left
+        ctx.current?.fillRect(minX! - BOX_PADDING - HANDLE_HALF, minY! - BOX_PADDING - HANDLE_HALF, HANDLE_SIZE, HANDLE_SIZE);
+        ctx.current?.strokeRect(minX! - BOX_PADDING - HANDLE_HALF, minY! - BOX_PADDING - HANDLE_HALF, HANDLE_SIZE, HANDLE_SIZE);
 
-    } else {
-        if (shape?.type === "box") {
-            //total box
-            ctx.current!.strokeRect(shape?.startX!-6, shape?.startY!-6, shape?.endX!-shape?.startX!+12, shape?.endY!-shape?.startY!+12);
+        // Top-right
+        ctx.current?.fillRect(maxX! + BOX_PADDING - HANDLE_HALF, minY! - BOX_PADDING - HANDLE_HALF, HANDLE_SIZE, HANDLE_SIZE);
+        ctx.current?.strokeRect(maxX! + BOX_PADDING - HANDLE_HALF, minY! - BOX_PADDING - HANDLE_HALF, HANDLE_SIZE, HANDLE_SIZE);
 
-            //border boxes
+        // Bottom-left
+        ctx.current?.fillRect(minX! - BOX_PADDING - HANDLE_HALF, maxY! + BOX_PADDING - HANDLE_HALF, HANDLE_SIZE, HANDLE_SIZE);
+        ctx.current?.strokeRect(minX! - BOX_PADDING - HANDLE_HALF, maxY! + BOX_PADDING - HANDLE_HALF, HANDLE_SIZE, HANDLE_SIZE);
 
-            // Top-Left
-            ctx.current?.fillRect(shape.startX!-10,shape.startY!-10,7,7);
-            ctx.current?.strokeRect(shape.startX!-10,shape.startY!-10,7,7);
-            
-            // Top-right
-            ctx.current?.fillRect(shape.endX!+3,shape.startY!-10,7,7);
-            ctx.current?.strokeRect(shape.endX!+3,shape.startY!-10,7,7);
-            
-            // Bottom-left
-            ctx.current?.fillRect(shape.startX!-10,shape.endY!+3,7,7);
-            ctx.current?.strokeRect(shape.startX!-10,shape.endY!+3,7,7);
-            
-            // Bottom-right
-            ctx.current?.fillRect(shape.endX!+3,shape.endY!+3,7,7);
-            ctx.current?.strokeRect(shape.endX!+3,shape.endY!+3,7,7);
-
-        } else if (shape?.type === "ellipse") {
-
-        } else if (shape?.type === "line") {
-
-        }
+        // Bottom-right
+        ctx.current?.fillRect(maxX! + BOX_PADDING - HANDLE_HALF, maxY! + BOX_PADDING - HANDLE_HALF, HANDLE_SIZE, HANDLE_SIZE);
+        ctx.current?.strokeRect(maxX! + BOX_PADDING - HANDLE_HALF, maxY! + BOX_PADDING - HANDLE_HALF, HANDLE_SIZE, HANDLE_SIZE);
     }
 }
