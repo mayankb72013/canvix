@@ -34,7 +34,6 @@ export default function useSelect() {
             let check = false;
             if (type === "pencil") {
                 check = ctx.current?.isPointInStroke(path as Path2D, clientX, clientY) || false;
-                console.log("Is point in path of pencil : " + check);
             } else if (type === "text") {
 
             } else {
@@ -74,6 +73,7 @@ export default function useSelect() {
             setSelectedShape(currentShape);
             BoundingBox(tempCtx, currentShape);
         } else {
+            setSelectedShape(undefined);
             BoundingBox(tempCtx);
         }
 

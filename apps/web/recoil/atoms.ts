@@ -1,6 +1,7 @@
 import { atom } from "recoil";
 import { CursorTypes, directions, Shape, Tools, Types } from "../app/types/types";
 import { devNull } from "node:os";
+import { HandleType } from "../tools/resizeRotate";
 
 export const toolSelected = atom<Types | Tools>({
     key: "toolSelected",
@@ -22,7 +23,7 @@ export const originalSnapshot = atom<Shape | undefined>({
     default: undefined
 })
 
-export const activeHandle = atom<directions>({
+export const activeHandle = atom<HandleType>({
     key: "activeHandle",
     default: undefined
 })

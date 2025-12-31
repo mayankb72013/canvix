@@ -7,11 +7,13 @@ export type Shape = {
     endY?: number;
     rotation?: number;
     path?: Path2D; //For freehand pencil
+    pointsInPath?: Point[]
     color?: string;
     strokeWidth?: number;
     strokeColor?: string;
 };
 
+export interface Point {x: number, y: number}
 export type Types = "pencil" | "box" | "ellipse" | "line" | "text"
 
 export type Tools = "select" 

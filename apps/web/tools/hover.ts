@@ -31,7 +31,6 @@ export default function useHover() {
             let check = false;
             if (type === "pencil") {
                 check = ctx.current?.isPointInStroke(path as Path2D, clientX, clientY) || false;
-                console.log("Is point in path of pencil : " + check);
             } else if (type === "text") {
 
             } else {

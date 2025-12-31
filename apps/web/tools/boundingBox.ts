@@ -1,10 +1,10 @@
 import { Shape } from "../app/types/types";
 
-export default function BoundingBox(ctx: React.RefObject<CanvasRenderingContext2D | null>, shape?: Shape) {
+export default function BoundingBox(ctx: React.RefObject<CanvasRenderingContext2D | null>, shape?: Shape, clearFlag: boolean = true) {
 
-    // if (clearFlag) {
+    if (clearFlag) {
         ctx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    // }
+    }
     ctx.current!.lineWidth = 2
     ctx.current!.strokeStyle = "#2684ff"
     ctx.current!.fillStyle = "#ffffff"

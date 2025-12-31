@@ -27,7 +27,7 @@ export default function Toolbar() {
         <>
             <div className="h-full flex items-center border border-gray-100 text-neutral-700 rounded-lg shadow-sm px-2 py-3 flex justify-center items-center gap-6">
                 
-                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("select"); setCurrentCursor("cursor-default")}}><SelectionTool /></button>
+                <button className="size-5 cursor-pointer" onClick={() => {setCurrentTool("select"); setCurrentCursor("cursor-default");}}><SelectionTool /></button>
                 <button className="size-5 cursor-pointer" onClick={() => {handleUndo()}}><Undo /></button>
                 <button className="size-5 cursor-pointer" onClick={() => {handleRedo()}}><Redo /></button>
 
