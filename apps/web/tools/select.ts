@@ -1,19 +1,20 @@
 import React from "react";
 import { useRecoilValue, useSetRecoilState } from "recoil";
-import { shapesArray, shapeSelected } from "../recoil/atoms";
+import { shapesArray, shapeSelected, strokeWidth } from "../recoil/atoms";
 import { Shape } from "../app/types/types";
 import BoundingBox from "./boundingBox";
 
 export default function useSelect() {
     const shapes = useRecoilValue(shapesArray);
     const setSelectedShape = useSetRecoilState(shapeSelected);
-
+    const lineWidth = useRecoilValue(strokeWidth);
 
     function handleSelect(ctx: React.RefObject<CanvasRenderingContext2D | null>, tempCtx: React.RefObject<CanvasRenderingContext2D | null>, clientX: number, clientY: number) {
 
         tempCtx.current!.lineWidth = 2
         tempCtx.current!.strokeStyle = "#2684ff"
-
+        ctx.current?.save();
+        ctx.current!.lineWidth=Math.max(10,lineWidth + 8);
         const hits = shapes.filter((shape) => {
 
             const {
@@ -67,14 +68,13 @@ export default function useSelect() {
             }
         })
 
-
+        ctx.current?.restore();
         const currentShape = hits.pop();
         if (currentShape) {
-            BoundingBox(tempCtx, currentShape, true);
             setSelectedShape(currentShape);
-            BoundingBox(tempCtx, currentShape, false);
+            BoundingBox(tempCtx, currentShape);
         } else {
-            BoundingBox(tempCtx, currentShape, true);
+            BoundingBox(tempCtx);
         }
 
     }

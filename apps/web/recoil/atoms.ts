@@ -1,5 +1,5 @@
 import { atom } from "recoil";
-import { CursorTypes, Shape, Tools, Types } from "../app/types/types";
+import { CursorTypes, directions, Shape, Tools, Types } from "../app/types/types";
 import { devNull } from "node:os";
 
 export const toolSelected = atom<Types | Tools>({
@@ -7,15 +7,26 @@ export const toolSelected = atom<Types | Tools>({
     default: "select"
 })
 
-export const shapeId = atom<number>({
-    key: "shapeId",
-    default: 0
-})
+// export const shapeId = atom<number>({
+//     key: "shapeId",
+//     default: 0
+// })
 
-export const shapeSelected = atom<Shape>({
+export const shapeSelected = atom<Shape | undefined>({
     key: "shapeSelected",
     default: undefined
 })
+
+export const originalSnapshot = atom<Shape | undefined>({
+    key: "originalSnapshot",
+    default: undefined
+})
+
+export const activeHandle = atom<directions>({
+    key: "activeHandle",
+    default: undefined
+})
+
 export const clearCanvas = atom({
     key: "clearCanvas",
     default: false

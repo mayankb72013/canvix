@@ -1,17 +1,17 @@
 import React from "react";
 import { useRecoilValue, useSetRecoilState } from "recoil";
-import { shapesArray, shapeSelected } from "../recoil/atoms";
+import { shapesArray, shapeSelected, strokeWidth } from "../recoil/atoms";
 import { Shape } from "../app/types/types";
 import BoundingBox from "./boundingBox";
 
 export default function useHover() {
     const shapes = useRecoilValue(shapesArray);
-    const setSelectedShape = useSetRecoilState(shapeSelected);
-
+    const lineWidth = useRecoilValue(strokeWidth);
 
     function handleHover(ctx: React.RefObject<CanvasRenderingContext2D | null>, clientX: number, clientY: number) {
 
-
+        ctx.current?.save();
+        ctx.current!.lineWidth=Math.max(10,lineWidth + 8);
         const hits = shapes.filter((shape) => {
 
             const {
@@ -36,6 +36,7 @@ export default function useHover() {
 
             } else {
                 const thisPath = new Path2D();
+                
                 if (type === "box") {
                     const widthX = endX! - startX!;
                     const widthY = endY! - startY!;
@@ -59,13 +60,13 @@ export default function useHover() {
                     check = ctx.current?.isPointInStroke(thisPath as Path2D, clientX, clientY) || false;
                 }
             }
-
             if (check) {
                 return shape;
             }
         })
-
-
+        
+        
+        ctx.current?.restore();
         const currentShape = hits.pop();
         if (currentShape) {
             return true;
