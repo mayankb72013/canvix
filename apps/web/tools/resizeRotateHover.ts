@@ -1,116 +1,154 @@
 import { useRecoilValue, useSetRecoilState } from "recoil";
-import { cursorState, shapeSelected, strokeWidth } from "../recoil/atoms";
-import { CursorTypes, directions } from "../app/types/types";
+import {
+    cursorState,
+    shapeSelected,
+    strokeWidth,
+} from "../recoil/atoms";
+import { directions } from "../app/types/types";
+import { toLocalMouse } from "./locateMouse";
 
-interface HandleType {
-    id: directions,
-    cx: number,
-    cy: number,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
+const HANDLE_SIZE = 8;
+const HANDLE_HALF = HANDLE_SIZE / 2;
+const BOX_PADDING = 8;
+
+const ROTATION_HANDLE_RADIUS = 6;
+const ROTATION_HANDLE_OFFSET = 24;
+
+export interface HandleType {
+    id: directions;
+    centerX: number;
+    centerY: number;
+    hitX: number;
+    hitY: number;
+    width: number;
+    height: number;
 }
 
-export default function useResizeRotateHover() {
+export default function useResizeRotateHover(): (
+    ctx: React.RefObject<CanvasRenderingContext2D | null>,
+    clientX: number,
+    clientY: number
+) => void {
     const selectedShape = useRecoilValue(shapeSelected);
     const setCurrentCursor = useSetRecoilState(cursorState);
     const lineWidth = useRecoilValue(strokeWidth);
 
-    // each of the above handles is a json object about the details of the handle like center coordinates, widths etc.
-    // calculate the values here itself for the shape so as to not cause re-calculations everytime.
+    let boundsLeft: number | undefined;
+    let boundsTop: number | undefined;
+    let boundsRight: number | undefined;
+    let boundsBottom: number | undefined;
 
-    const HANDLE_SIZE = 8;
-    const HANDLE_HALF = HANDLE_SIZE / 2;
-    const BOX_PADDING = 8;
-
-
-
-
-    function handleResizeRotateHover(ctx: React.RefObject<CanvasRenderingContext2D | null>, clientX: number, clientY: number,) {
+    function handleResizeRotateHover(
+        ctx: React.RefObject<CanvasRenderingContext2D | null>,
+        clientX: number,
+        clientY: number
+    ) {
         ctx.current?.save();
-        ctx.current!.lineWidth = Math.max(10,lineWidth + 8);
-        
-        // normalized bounds
-        if (selectedShape === undefined) return ;
-        const minX = Math.min(selectedShape.startX!, selectedShape.endX!);
-        const minY = Math.min(selectedShape.startY!, selectedShape.endY!);
-        const maxX = Math.max(selectedShape.startX!, selectedShape.endX!);
-        const maxY = Math.max(selectedShape.startY!, selectedShape.endY!);
+        ctx.current!.lineWidth = Math.max(10, lineWidth + 8);
 
-        // handle centers
-        const nwCX = minX - BOX_PADDING;
-        const nwCY = minY - BOX_PADDING;
+        if (!selectedShape) return;
 
-        const neCX = maxX + BOX_PADDING;
-        const neCY = minY - BOX_PADDING;
+        boundsLeft = Math.min(selectedShape.startX!, selectedShape.endX!);
+        boundsTop = Math.min(selectedShape.startY!, selectedShape.endY!);
+        boundsRight = Math.max(selectedShape.startX!, selectedShape.endX!);
+        boundsBottom = Math.max(selectedShape.startY!, selectedShape.endY!);
 
-        const swCX = minX - BOX_PADDING;
-        const swCY = maxY + BOX_PADDING;
+        const rotationCenterX =
+            (boundsLeft - BOX_PADDING + boundsRight + BOX_PADDING) / 2;
+        const rotationCenterY =
+            boundsTop - BOX_PADDING - ROTATION_HANDLE_OFFSET;
 
-        const seCX = maxX + BOX_PADDING;
-        const seCY = maxY + BOX_PADDING;
+        const northWestCenterX = boundsLeft - BOX_PADDING;
+        const northWestCenterY = boundsTop - BOX_PADDING;
 
-        // computed handle JSONs
-        const nw: HandleType = {
+        const northEastCenterX = boundsRight + BOX_PADDING;
+        const northEastCenterY = boundsTop - BOX_PADDING;
+
+        const southWestCenterX = boundsLeft - BOX_PADDING;
+        const southWestCenterY = boundsBottom + BOX_PADDING;
+
+        const southEastCenterX = boundsRight + BOX_PADDING;
+        const southEastCenterY = boundsBottom + BOX_PADDING;
+
+        const northWestHandle: HandleType = {
             id: "nw",
-            cx: nwCX,
-            cy: nwCY,
-            x: nwCX - HANDLE_HALF,
-            y: nwCY - HANDLE_HALF,
+            centerX: northWestCenterX,
+            centerY: northWestCenterY,
+            hitX: northWestCenterX - HANDLE_HALF,
+            hitY: northWestCenterY - HANDLE_HALF,
             width: HANDLE_SIZE,
             height: HANDLE_SIZE,
         };
 
-        const ne: HandleType = {
+        const northEastHandle: HandleType = {
             id: "ne",
-            cx: neCX,
-            cy: neCY,
-            x: neCX - HANDLE_HALF,
-            y: neCY - HANDLE_HALF,
+            centerX: northEastCenterX,
+            centerY: northEastCenterY,
+            hitX: northEastCenterX - HANDLE_HALF,
+            hitY: northEastCenterY - HANDLE_HALF,
             width: HANDLE_SIZE,
             height: HANDLE_SIZE,
         };
 
-        const sw: HandleType = {
+        const southWestHandle: HandleType = {
             id: "sw",
-            cx: swCX,
-            cy: swCY,
-            x: swCX - HANDLE_HALF,
-            y: swCY - HANDLE_HALF,
+            centerX: southWestCenterX,
+            centerY: southWestCenterY,
+            hitX: southWestCenterX - HANDLE_HALF,
+            hitY: southWestCenterY - HANDLE_HALF,
             width: HANDLE_SIZE,
             height: HANDLE_SIZE,
         };
 
-        const se: HandleType = {
+        const southEastHandle: HandleType = {
             id: "se",
-            cx: seCX,
-            cy: seCY,
-            x: seCX - HANDLE_HALF,
-            y: seCY - HANDLE_HALF,
+            centerX: southEastCenterX,
+            centerY: southEastCenterY,
+            hitX: southEastCenterX - HANDLE_HALF,
+            hitY: southEastCenterY - HANDLE_HALF,
             width: HANDLE_SIZE,
             height: HANDLE_SIZE,
         };
 
-        const resizeHandles = [nw, ne, sw, se];
-        // now check the clientX and clientY if they are in the area of the box that encloses the resize handles
-        // if yes then we just change the cursor.
+        const rotationHandle: HandleType = {
+            id: "rotate",
+            centerX: rotationCenterX,
+            centerY: rotationCenterY,
+            hitX: rotationCenterX - ROTATION_HANDLE_RADIUS,
+            hitY: rotationCenterY - ROTATION_HANDLE_RADIUS,
+            width: ROTATION_HANDLE_RADIUS * 2,
+            height: ROTATION_HANDLE_RADIUS * 2,
+        };
+
+        const resizeHandles = [
+            northWestHandle,
+            northEastHandle,
+            southWestHandle,
+            southEastHandle,
+            rotationHandle,
+        ];
 
         for (const handle of resizeHandles) {
+            const { x, y } = toLocalMouse(clientX, clientY, selectedShape);
+
             if (
-                clientX >= handle.x &&
-                clientX <= handle.x + handle.width &&
-                clientY >= handle.y &&
-                clientY <= handle.y + handle.height
+                x >= handle.hitX &&
+                x <= handle.hitX + handle.width &&
+                y >= handle.hitY &&
+                y <= handle.hitY + handle.height
             ) {
                 if (handle.id === "sw" || handle.id === "ne") {
-                    setCurrentCursor("cursor-nesw-resize")
-                } else {
-                    setCurrentCursor("cursor-nwse-resize")
+                    setCurrentCursor("cursor-nesw-resize");
+                } else if (handle.id === "se" || handle.id === "nw") {
+                    setCurrentCursor("cursor-nwse-resize");
+                } else if (handle.id === "rotate") {
+                    setCurrentCursor("cursor-grab");
                 }
+                break;
             }
         }
 
+        // console.log("Reached");
         ctx.current!.restore();
     }
 

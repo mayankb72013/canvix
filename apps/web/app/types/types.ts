@@ -18,6 +18,6 @@ export type Types = "pencil" | "box" | "ellipse" | "line" | "text"
 
 export type Tools = "select" 
 
-export type CursorTypes = "cursor-default"|"cursor-crosshair" | "cursor-move" | "cursor-pointer" | `cursor-${directions}-resize`
+export type CursorTypes = "cursor-default"|"cursor-crosshair" | "cursor-move" | "cursor-pointer" | `cursor-${directions}-resize` | "cursor-grab"
 
-export type directions = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw" | "nesw" | "nwse"
+export type directions = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw" | "nesw" | "nwse" | "rotate"

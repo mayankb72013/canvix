@@ -24,7 +24,8 @@ export default function Canvas() {
     const mainCtx = useRef<CanvasRenderingContext2D | null>(null);
     const tempCtx = useRef<CanvasRenderingContext2D | null>(null);
     const isPainting = useRef<boolean>(false);
-    const isResizingRotating = useRef<boolean>(false);
+    const isResizing = useRef<boolean>(false);
+    const isRotating = useRef<boolean>(false);
     const currentToolSelected = useRecoilValue(toolSelected);
     const startX = useRef<number>(0);
     const startY = useRef<number>(0);
@@ -53,7 +54,7 @@ export default function Canvas() {
     const handleSelect = useSelect();
     const handleHover = useHover();
     const handleResizeRotateHover = useResizeRotateHover();
-    const [handleResizeRotate, handleClick] = useResizeRotate();
+    const [handleResizeRotate, handleResize, handleRotate] = useResizeRotate();
     const [selectedShape, setSelectedShape] = useRecoilState(shapeSelected);
     const [initialSnapshot, setInitialSnapshot] = useRecoilState(originalSnapshot);
 
@@ -71,7 +72,7 @@ export default function Canvas() {
             tempCanvas.current!.width = window.innerWidth;
             tempCanvas.current!.height = window.innerHeight;
 
-            reDrawCanvas(mainCtx,tempCtx, shapes);
+            reDrawCanvas(mainCtx, tempCtx, shapes);
         };
 
         window.addEventListener('resize', resizeCanvas);
@@ -93,25 +94,36 @@ export default function Canvas() {
     useEffect(() => {
         if (shapesChanged) {
             mainCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            reDrawCanvas(mainCtx,tempCtx, shapes);
+            reDrawCanvas(mainCtx, tempCtx, shapes, isResizing.current, isRotating.current);
             setShapesChanged(false);
+            isResizing.current = false;
+            isRotating.current = false;
         }
     }, [shapesChanged]);
 
     function startPainting(e: MouseEvent) {
 
         if (currentCursor.endsWith("resize")) {
-            isResizingRotating.current = true;
+            isResizing.current = true;
             setInitialSnapshot(selectedShape);
             handleResizeRotate(mainCtx, e.clientX, e.clientY);
-            handleClick(mainCtx,tempCtx, e.clientX, e.clientY);
+            handleResize(mainCtx, tempCtx, e.clientX, e.clientY);
             draw(e);
             return;
         }
-        if (currentToolSelected === "select" && !currentCursor.endsWith("resize")) {
+        if (currentCursor.endsWith("grab")) {
+            isRotating.current = true;
+            setInitialSnapshot(selectedShape);
+            handleResizeRotate(mainCtx, e.clientX, e.clientY);
+            handleRotate(mainCtx, tempCtx, e.clientX, e.clientY);
+            draw(e);
+            return;
+        }
+        if (currentToolSelected === "select" && !currentCursor.endsWith("resize") && !currentCursor.endsWith("grab")) {
             handleSelect(mainCtx, tempCtx, e.clientX, e.clientY);
             return;
         }
+
 
 
         isPainting.current = true;
@@ -135,10 +147,23 @@ export default function Canvas() {
     }
 
     function stopPainting(e: MouseEvent) {
-        if (isResizingRotating.current) {
+        if (isResizing.current) {
             setInitialSnapshot(undefined);
-            tempCtx.current?.clearRect(0,0,window.innerWidth,window.innerHeight);
-            BoundingBox(tempCtx,selectedShape);
+            tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            // BoundingBox(tempCtx, selectedShape);
+            const newShapes = shapes.map((shape) => {
+                if (shape.id === selectedShape?.id) {
+                    return selectedShape;
+                } else {
+                    return shape;
+                }
+            })
+            setShapes(newShapes);
+            setShapesChanged(true);
+        } else if (isRotating.current) {
+            setInitialSnapshot(undefined);
+            tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            // BoundingBox(tempCtx, selectedShape);
             const newShapes = shapes.map((shape) => {
                 if (shape.id === selectedShape?.id) {
                     return selectedShape;
@@ -149,7 +174,6 @@ export default function Canvas() {
             setShapes(newShapes);
             setShapesChanged(true);
         }
-        isResizingRotating.current = false;
         isPainting.current = false;
         if (currentToolSelected === "pencil") {
 
@@ -164,7 +188,8 @@ export default function Canvas() {
                     startY: minY,
                     endX: maxX,
                     endY: maxY,
-                    pointsInPath: points
+                    pointsInPath: points,
+                    rotation: 0
                 }];
                 undo.push(newShapes);
                 return newShapes;
@@ -186,6 +211,7 @@ export default function Canvas() {
                     endY: e.clientY,
                     strokeColor: currentStrokeColor,
                     strokeWidth: currentStrokeWidth,
+                    rotation: 0
                 }]
                 undo.push(newShapes);
                 return newShapes;
@@ -227,6 +253,7 @@ export default function Canvas() {
                     endY: e.clientY,
                     strokeColor: currentStrokeColor,
                     strokeWidth: currentStrokeWidth,
+                    rotation: 0,
                 }]
                 undo.push(newShapes);
                 return newShapes;
@@ -243,7 +270,7 @@ export default function Canvas() {
     }
 
     function draw(e: MouseEvent) {
-        if (!isPainting.current && !isResizingRotating.current) {
+        if (!isPainting.current && !isResizing.current && !isRotating.current) {
             const isShape = handleHover(tempCtx, e.clientX, e.clientY);
             if (isShape && currentToolSelected === "select") {
                 setCurrentCursor("cursor-move");
@@ -257,8 +284,13 @@ export default function Canvas() {
             }
             return;
         };
-        if (!isPainting.current && isResizingRotating.current) {
-            handleClick(mainCtx,tempCtx, e.clientX, e.clientY);
+        if (!isPainting.current && !isRotating.current && isResizing.current) {
+            handleResize(mainCtx, tempCtx, e.clientX, e.clientY);
+            return;
+        }
+        if (!isPainting.current && !isResizing.current && isRotating.current) {
+            handleRotate(mainCtx, tempCtx, e.clientX, e.clientY);
+            return;
         }
         if (currentToolSelected === "pencil") {
             minX = Math.min(e.clientX, minX);

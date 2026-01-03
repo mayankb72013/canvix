@@ -9,26 +9,26 @@ import {
     strokeWidth,
 } from "../recoil/atoms";
 import { directions, Point, Shape } from "../app/types/types";
-import BoundingBox from "./boundingBox";
 import { useRedrawCanvas } from "../app/utils/redraw";
-
-export interface HandleType {
-    id: directions;
-    centerX: number;
-    centerY: number;
-    hitX: number;
-    hitY: number;
-    width: number;
-    height: number;
-}
+import { HandleType } from "./resizeRotateHover";
 
 const HANDLE_SIZE = 8;
 const HANDLE_HALF = HANDLE_SIZE / 2;
 const BOX_PADDING = 8;
 
+const ROTATION_HANDLE_RADIUS = 6;
+const ROTATION_HANDLE_OFFSET = 24;
+
+
 export default function useResizeRotate(): [
     (
         ctx: React.RefObject<CanvasRenderingContext2D | null>,
+        clientX: number,
+        clientY: number
+    ) => void,
+    (
+        mainCtx: React.RefObject<CanvasRenderingContext2D | null>,
+        tempCtx: React.RefObject<CanvasRenderingContext2D | null>,
         clientX: number,
         clientY: number
     ) => void,
@@ -69,6 +69,9 @@ export default function useResizeRotate(): [
         boundsTop = Math.min(selectedShape.startY!, selectedShape.endY!);
         boundsRight = Math.max(selectedShape.startX!, selectedShape.endX!);
         boundsBottom = Math.max(selectedShape.startY!, selectedShape.endY!);
+
+        const rotationCenterX = (boundsLeft - BOX_PADDING + boundsRight + BOX_PADDING) / 2;
+        const rotationCenterY = boundsTop - BOX_PADDING - ROTATION_HANDLE_OFFSET;
 
         const northWestCenterX = boundsLeft - BOX_PADDING;
         const northWestCenterY = boundsTop - BOX_PADDING;
@@ -122,11 +125,22 @@ export default function useResizeRotate(): [
             height: HANDLE_SIZE,
         };
 
+        const rotationHandle: HandleType = {
+            id: "rotate",
+            centerX: rotationCenterX,
+            centerY: rotationCenterY,
+            hitX: rotationCenterX - ROTATION_HANDLE_RADIUS,
+            hitY: rotationCenterY - ROTATION_HANDLE_RADIUS,
+            width: ROTATION_HANDLE_RADIUS * 2,
+            height: ROTATION_HANDLE_RADIUS * 2,
+        };
+
         const resizeHandles = [
             northWestHandle,
             northEastHandle,
             southWestHandle,
             southEastHandle,
+            rotationHandle,
         ];
 
         for (const handle of resizeHandles) {
@@ -136,10 +150,13 @@ export default function useResizeRotate(): [
                 clientY >= handle.hitY &&
                 clientY <= handle.hitY + handle.height
             ) {
+
                 if (handle.id === "sw" || handle.id === "ne") {
                     setCurrentCursor("cursor-nesw-resize");
-                } else {
+                } else if (handle.id === "se" || handle.id === "nw") {
                     setCurrentCursor("cursor-nwse-resize");
+                } else if (handle.id === "rotate") {
+                    setCurrentCursor("cursor-grab");
                 }
                 setCurrentActiveHandle(handle);
             }
@@ -148,7 +165,7 @@ export default function useResizeRotate(): [
         ctx.current!.restore();
     }
 
-    function handleClick(
+    function handleResize(
         mainCtx: React.RefObject<CanvasRenderingContext2D | null>,
         tempCtx: React.RefObject<CanvasRenderingContext2D | null>,
         clientX: number,
@@ -186,8 +203,8 @@ export default function useResizeRotate(): [
         }
 
         if (initialShape.type === "pencil") {
-            console.log("Initial: "+initialShape.pointsInPath);
-            console.log("Selected: "+selectedShape?.pointsInPath)
+            console.log("Initial: " + initialShape.pointsInPath);
+            console.log("Selected: " + selectedShape?.pointsInPath)
             Tx = currentActiveHandle.centerX - anchorX;
             Ty = currentActiveHandle.centerY - anchorY;
             if (Tx === 0 || Ty === 0) return;
@@ -202,10 +219,10 @@ export default function useResizeRotate(): [
                 x: anchorX + (point.x - anchorX) * scaleX,
                 y: anchorY + (point.y - anchorY) * scaleY
             }));
-            let newMinX = anchorX + (initialShape.startX! - anchorX)*scaleX;
-            let newMinY = anchorY + (initialShape.startY! - anchorY)*scaleY;
-            let newMaxX = anchorX + (initialShape.endX! - anchorX)*scaleX;
-            let newMaxY = anchorY + (initialShape.endY! - anchorY)*scaleY;
+            let newMinX = anchorX + (initialShape.startX! - anchorX) * scaleX;
+            let newMinY = anchorY + (initialShape.startY! - anchorY) * scaleY;
+            let newMaxX = anchorX + (initialShape.endX! - anchorX) * scaleX;
+            let newMaxY = anchorY + (initialShape.endY! - anchorY) * scaleY;
 
             if (points !== undefined) {
                 const newPath = new Path2D();
@@ -232,7 +249,6 @@ export default function useResizeRotate(): [
                     mainCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
                     tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
                     handleRedrawCanvas(mainCtx, tempCtx, shapes, true);
-                    BoundingBox(tempCtx, updatedShape, false);
                 }
 
             }
@@ -261,17 +277,36 @@ export default function useResizeRotate(): [
                 mainCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
                 tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
                 handleRedrawCanvas(mainCtx, tempCtx, shapes, true);
-                BoundingBox(tempCtx, updatedShape, false);
             }
-            // if (initialShape.type === "box") {
-            // } else if (initialShape.type === "ellipse") {
-
-            // } else if (initialShape.type === "line") {
-
-            // }
         }
     }
-    return [handleResizeRotate, handleClick];
+
+    function handleRotate(mainCtx: React.RefObject<CanvasRenderingContext2D | null>, tempCtx: React.RefObject<CanvasRenderingContext2D | null>, clientX: number, clientY: number) {
+
+        // console.log("Initial Shape : "+initialShape+"\nCurrentActiveHandle : "+currentActiveHandle.id);
+        if (!initialShape || !currentActiveHandle) return;
+        
+        const centerX = (initialShape?.startX! + initialShape?.endX!) / 2;
+        const centerY = (initialShape?.startY! + initialShape?.endY!) / 2;
+        
+        const rad = Math.atan2((clientY - centerY), (clientX - centerX));
+        
+        let updatedShape: Shape | null = null;
+        
+        updatedShape = {
+            ...initialShape,
+            rotation: rad
+        };
+        
+        if (updatedShape) {
+            setSelectedShape(updatedShape);
+            mainCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            handleRedrawCanvas(mainCtx, tempCtx, shapes, false, true);
+        }
+    }
+
+    return [handleResizeRotate, handleResize, handleRotate];
 }
 
 

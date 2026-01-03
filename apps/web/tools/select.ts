@@ -14,7 +14,7 @@ export default function useSelect() {
         tempCtx.current!.lineWidth = 2
         tempCtx.current!.strokeStyle = "#2684ff"
         ctx.current?.save();
-        ctx.current!.lineWidth=Math.max(10,lineWidth + 8);
+        ctx.current!.lineWidth = Math.max(10, lineWidth + 8);
         const hits = shapes.filter((shape) => {
 
             const {
@@ -30,6 +30,15 @@ export default function useSelect() {
                 strokeWidth,
                 strokeColor,
             } = shape;
+
+            const centerX = (shape?.startX! + shape?.endX!) / 2;
+            const centerY = (shape?.startY! + shape?.endY!) / 2;
+
+            ctx.current?.translate(centerX, centerY);
+            ctx.current?.rotate(shape.rotation as number);
+            ctx.current?.translate(-centerX, -centerY);
+
+
 
             let check = false;
             if (type === "pencil") {
@@ -51,7 +60,7 @@ export default function useSelect() {
                     const endAngle = 2 * Math.PI;
                     const x = (Math.abs(startX! + endX!) / 2) as number;
                     const y = (Math.abs(startY! + endY!) / 2) as number;
-                    thisPath.ellipse(x, y, radiusX, radiusY, rotation as number, startAngle, endAngle);
+                    thisPath.ellipse(x, y, radiusX, radiusY, 0, startAngle, endAngle);
 
                     check = ctx.current?.isPointInStroke(thisPath as Path2D, clientX, clientY) || false;
                 } else if (type === "line") {
@@ -62,16 +71,27 @@ export default function useSelect() {
                 }
             }
 
+            ctx.current?.restore();
             if (check) {
                 return shape;
             }
         })
 
-        ctx.current?.restore();
+
         const currentShape = hits.pop();
+
+        
         if (currentShape) {
+            const centerX = (currentShape?.startX! + currentShape?.endX!) / 2;
+            const centerY = (currentShape?.startY! + currentShape?.endY!) / 2;
             setSelectedShape(currentShape);
+    
+            tempCtx.current?.save();
+            tempCtx.current?.translate(centerX, centerY);
+            tempCtx.current?.rotate(currentShape.rotation as number);
+            tempCtx.current?.translate(-centerX, -centerY);
             BoundingBox(tempCtx, currentShape);
+            tempCtx.current?.restore();
         } else {
             setSelectedShape(undefined);
             BoundingBox(tempCtx);
