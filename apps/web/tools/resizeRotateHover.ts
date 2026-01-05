@@ -5,7 +5,7 @@ import {
     strokeWidth,
 } from "../recoil/atoms";
 import { directions } from "../app/types/types";
-import { toLocalMouse } from "./locateMouse";
+import { toLocalMouse } from "./Mouse";
 
 const HANDLE_SIZE = 8;
 const HANDLE_HALF = HANDLE_SIZE / 2;

@@ -3,7 +3,7 @@ import { useRecoilValue, useSetRecoilState } from "recoil";
 import { shapesArray, shapeSelected, strokeWidth } from "../recoil/atoms";
 import { Shape } from "../app/types/types";
 import BoundingBox from "./boundingBox";
-import { toLocalMouse } from "./locateMouse";
+import { toLocalMouse } from "./Mouse";
 
 export default function useHover() {
     const shapes = useRecoilValue(shapesArray);
@@ -12,7 +12,7 @@ export default function useHover() {
     function handleHover(ctx: React.RefObject<CanvasRenderingContext2D | null>, clientX: number, clientY: number) {
 
         ctx.current?.save();
-        ctx.current!.lineWidth = Math.max(10, lineWidth + 8);
+        ctx.current!.lineWidth = Math.max(10, lineWidth + 10);
         const hits = shapes.filter((shape) => {
 
             const {
@@ -50,9 +50,9 @@ export default function useHover() {
                     const radiusY = Math.abs(startY! - endY!) / 2;
                     const startAngle = 0;
                     const endAngle = 2 * Math.PI;
-                    const x = (Math.abs(startX! + endX!) / 2) as number;
-                    const y = (Math.abs(startY! + endY!) / 2) as number;
-                    thisPath.ellipse(x, y, radiusX, radiusY, 0, startAngle, endAngle);
+                    const centerX = (Math.abs(startX! + endX!) / 2) as number;
+                    const centerY = (Math.abs(startY! + endY!) / 2) as number;
+                    thisPath.ellipse(centerX, centerY, radiusX, radiusY, 0, startAngle, endAngle);
 
                     check = ctx.current?.isPointInStroke(thisPath as Path2D, x, y) || false;
                 } else if (type === "line") {
@@ -62,13 +62,13 @@ export default function useHover() {
                     check = ctx.current?.isPointInStroke(thisPath as Path2D, x, y) || false;
                 }
             }
-            ctx.current?.restore();
             if (check) {
                 return shape;
             }
         })
-
-
+        
+        
+        ctx.current?.restore();
         const currentShape = hits.pop();
         if (currentShape) {
             return true;

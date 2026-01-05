@@ -289,7 +289,7 @@ export default function useResizeRotate(): [
         const centerX = (initialShape?.startX! + initialShape?.endX!) / 2;
         const centerY = (initialShape?.startY! + initialShape?.endY!) / 2;
         
-        const rad = Math.atan2((clientY - centerY), (clientX - centerX));
+        const rad = Math.atan2((clientY - centerY), (clientX - centerX))+1.5708;
         
         let updatedShape: Shape | null = null;
         
