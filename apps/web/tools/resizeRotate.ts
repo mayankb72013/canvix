@@ -11,6 +11,8 @@ import {
 import { directions, Point, Shape } from "../app/types/types";
 import { useRedrawCanvas } from "../app/utils/redraw";
 import { HandleType } from "./resizeRotateHover";
+import { useRef } from "react";
+import { toLocalMouse, toWorldPoint } from "./Mouse";
 
 const HANDLE_SIZE = 8;
 const HANDLE_HALF = HANDLE_SIZE / 2;
@@ -53,6 +55,11 @@ export default function useResizeRotate(): [
     let boundsTop: number | undefined;
     let boundsRight: number | undefined;
     let boundsBottom: number | undefined;
+
+    const resizeBase = useRef<Shape>();
+    const resizeRotation = useRef<number>();
+    const resizeCenter = useRef<{ x: number, y: number }>();
+    const localAnchor = useRef<{ x: number, y: number }>();
 
     function handleResizeRotate(
 
@@ -144,11 +151,12 @@ export default function useResizeRotate(): [
         ];
 
         for (const handle of resizeHandles) {
+            const { x: localMouseX, y: localMouseY } = toLocalMouse(clientX, clientY, selectedShape);
             if (
-                clientX >= handle.hitX &&
-                clientX <= handle.hitX + handle.width &&
-                clientY >= handle.hitY &&
-                clientY <= handle.hitY + handle.height
+                localMouseX >= handle.hitX &&
+                localMouseX <= handle.hitX + handle.width &&
+                localMouseY >= handle.hitY &&
+                localMouseY <= handle.hitY + handle.height
             ) {
 
                 if (handle.id === "sw" || handle.id === "ne") {
@@ -159,6 +167,32 @@ export default function useResizeRotate(): [
                     setCurrentCursor("cursor-grab");
                 }
                 setCurrentActiveHandle(handle);
+
+
+
+                resizeBase.current = selectedShape;
+                resizeRotation.current = selectedShape.rotation;
+                let cx = (resizeBase.current.startX! + resizeBase.current.endX!) / 2;
+                let cy = (resizeBase.current.startY! + resizeBase.current.endY!) / 2;
+
+                resizeCenter.current = { x: cx, y: cy };
+
+                console.log("Initial x, y : ", cx, cy);
+
+                const minX = Math.min(boundsLeft!, boundsRight!);
+                const minY = Math.min(boundsTop!, boundsBottom!);
+                const maxX = Math.max(boundsLeft!, boundsRight!);
+                const maxY = Math.max(boundsTop!, boundsBottom!);
+
+                if (handle.id === "ne") {
+                    localAnchor.current = { x: minX, y: maxY };
+                } else if (handle.id === "se") {
+                    localAnchor.current = { x: minX, y: minY };
+                } else if (handle.id === "nw") {
+                    localAnchor.current = { x: maxX, y: maxY };
+                } else if (handle.id === "sw") {
+                    localAnchor.current = { x: maxX, y: minY };
+                }
             }
         }
 
@@ -173,56 +207,59 @@ export default function useResizeRotate(): [
     ) {
         if (!initialShape || !currentActiveHandle) return;
 
-        let anchorX: number;
-        let anchorY: number;
+        // let anchorX: number;
+        // let anchorY: number;
         let currentHandleX: number;
         let currentHandleY: number;
         let Tx: number;
         let Ty: number;
 
+
+        const { x: mouseLocalX, y: mouseLocalY } = toLocalMouse(clientX, clientY, resizeBase.current!, resizeCenter.current?.x, resizeCenter.current?.y);
+
         if (currentActiveHandle.id === "nw") {
-            anchorX = initialShape.endX!;
-            anchorY = initialShape.endY!;
-            currentHandleX = clientX + BOX_PADDING;
-            currentHandleY = clientY + BOX_PADDING;
+            // anchorX = initialShape.endX!;
+            // anchorY = initialShape.endY!;
+            currentHandleX = mouseLocalX + BOX_PADDING;
+            currentHandleY = mouseLocalY + BOX_PADDING;
         } else if (currentActiveHandle.id === "ne") {
-            anchorX = initialShape.startX!;
-            anchorY = initialShape.endY!;
-            currentHandleX = clientX - BOX_PADDING;
-            currentHandleY = clientY + BOX_PADDING;
+            // anchorX = initialShape.startX!;
+            // anchorY = initialShape.endY!;
+            currentHandleX = mouseLocalX - BOX_PADDING;
+            currentHandleY = mouseLocalY + BOX_PADDING;
         } else if (currentActiveHandle.id === "sw") {
-            anchorX = initialShape.endX!;
-            anchorY = initialShape.startY!;
-            currentHandleX = clientX + BOX_PADDING;
-            currentHandleY = clientY - BOX_PADDING;
+            // anchorX = initialShape.endX!;
+            // anchorY = initialShape.startY!;
+            currentHandleX = mouseLocalX + BOX_PADDING;
+            currentHandleY = mouseLocalY - BOX_PADDING;
         } else {
-            anchorX = initialShape.startX!;
-            anchorY = initialShape.startY!;
-            currentHandleX = clientX - BOX_PADDING;
-            currentHandleY = clientY - BOX_PADDING;
+            // anchorX = initialShape.startX!;
+            // anchorY = initialShape.startY!;
+            currentHandleX = mouseLocalX - BOX_PADDING;
+            currentHandleY = mouseLocalY - BOX_PADDING;
         }
 
         if (initialShape.type === "pencil") {
             console.log("Initial: " + initialShape.pointsInPath);
             console.log("Selected: " + selectedShape?.pointsInPath)
-            Tx = currentActiveHandle.centerX - anchorX;
-            Ty = currentActiveHandle.centerY - anchorY;
+            Tx = currentActiveHandle.centerX - localAnchor.current?.x!;
+            Ty = currentActiveHandle.centerY - localAnchor.current?.y!;
             if (Tx === 0 || Ty === 0) return;
 
-            let currentX = currentHandleX - anchorX;
-            let currentY = currentHandleY - anchorY;
+            let currentX = currentHandleX - localAnchor.current?.x!;
+            let currentY = currentHandleY - localAnchor.current?.y!;
 
             let scaleX = currentX / Tx;
             let scaleY = currentY / Ty;
 
             let points = initialShape.pointsInPath?.map(point => ({
-                x: anchorX + (point.x - anchorX) * scaleX,
-                y: anchorY + (point.y - anchorY) * scaleY
+                x: localAnchor.current?.x! + (point.x - localAnchor.current?.x!) * scaleX,
+                y: localAnchor.current?.y! + (point.y - localAnchor.current?.y!) * scaleY
             }));
-            let newMinX = anchorX + (initialShape.startX! - anchorX) * scaleX;
-            let newMinY = anchorY + (initialShape.startY! - anchorY) * scaleY;
-            let newMaxX = anchorX + (initialShape.endX! - anchorX) * scaleX;
-            let newMaxY = anchorY + (initialShape.endY! - anchorY) * scaleY;
+            let newMinX = localAnchor.current?.x! + (initialShape.startX! - localAnchor.current?.x!) * scaleX;
+            let newMinY = localAnchor.current?.y! + (initialShape.startY! - localAnchor.current?.y!) * scaleY;
+            let newMaxX = localAnchor.current?.x! + (initialShape.endX! - localAnchor.current?.x!) * scaleX;
+            let newMaxY = localAnchor.current?.y! + (initialShape.endY! - localAnchor.current?.y!) * scaleY;
 
             if (points !== undefined) {
                 const newPath = new Path2D();
@@ -255,22 +292,36 @@ export default function useResizeRotate(): [
         } else if (initialShape.type === "text") {
 
         } else {
-            const startX = Math.min(anchorX, currentHandleX);
-            const startY = Math.min(anchorY, currentHandleY);
-            const endX = Math.max(anchorX, currentHandleX);
-            const endY = Math.max(anchorY, currentHandleY);
+            const newLocalMinX = Math.min(localAnchor.current?.x!, currentHandleX);
+            const newLocalMinY = Math.min(localAnchor.current?.y!, currentHandleY);
+            const newLocalMaxX = Math.max(localAnchor.current?.x!, currentHandleX);
+            const newLocalMaxY = Math.max(localAnchor.current?.y!, currentHandleY);
 
             let updatedShape: Shape | null = null;
+
+            const newLocalCenterX = (newLocalMinX + newLocalMaxX) / 2;
+            const newLocalCenterY = (newLocalMinY + newLocalMaxY) / 2;
+
+            const newLocalWidth = newLocalMaxX - newLocalMinX;
+            const newLocalHeight = newLocalMaxY - newLocalMinY;
+
+            const { x: worldCenterX, y: worldCenterY } = toWorldPoint(newLocalCenterX, newLocalCenterY, resizeBase.current!, resizeCenter.current?.x, resizeCenter.current?.y);
+
+            console.log("Frozen center:", resizeCenter.current);
+            console.log("Live center:",
+                worldCenterX,
+                worldCenterY
+            );
 
 
             updatedShape = {
                 ...initialShape,
-                startX,
-                startY,
-                endX,
-                endY,
+                startX: worldCenterX - newLocalWidth / 2,
+                startY: worldCenterY - newLocalHeight / 2,
+                endX: worldCenterX + newLocalWidth / 2,
+                endY: worldCenterY + newLocalHeight / 2,
+                rotation: resizeBase.current?.rotation
             };
-
 
             if (updatedShape) {
                 setSelectedShape(updatedShape);
@@ -283,21 +334,20 @@ export default function useResizeRotate(): [
 
     function handleRotate(mainCtx: React.RefObject<CanvasRenderingContext2D | null>, tempCtx: React.RefObject<CanvasRenderingContext2D | null>, clientX: number, clientY: number) {
 
-        // console.log("Initial Shape : "+initialShape+"\nCurrentActiveHandle : "+currentActiveHandle.id);
         if (!initialShape || !currentActiveHandle) return;
-        
+
         const centerX = (initialShape?.startX! + initialShape?.endX!) / 2;
         const centerY = (initialShape?.startY! + initialShape?.endY!) / 2;
-        
-        const rad = Math.atan2((clientY - centerY), (clientX - centerX))+1.5708;
-        
+
+        const rad = Math.atan2((clientY - centerY), (clientX - centerX)) + 1.5708;
+
         let updatedShape: Shape | null = null;
-        
+
         updatedShape = {
             ...initialShape,
             rotation: rad
         };
-        
+
         if (updatedShape) {
             setSelectedShape(updatedShape);
             mainCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);

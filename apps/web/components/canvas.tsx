@@ -96,8 +96,6 @@ export default function Canvas() {
             mainCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
             reDrawCanvas(mainCtx, tempCtx, shapes, isResizing.current, isRotating.current);
             setShapesChanged(false);
-            isResizing.current = false;
-            isRotating.current = false;
         }
     }, [shapesChanged]);
 
@@ -107,16 +105,16 @@ export default function Canvas() {
             isResizing.current = true;
             setInitialSnapshot(selectedShape);
             handleResizeRotate(mainCtx, e.clientX, e.clientY);
-            handleResize(mainCtx, tempCtx, e.clientX, e.clientY);
-            draw(e);
+            // handleResize(mainCtx, tempCtx, e.clientX, e.clientY);
+            // draw(e);
             return;
         }
         if (currentCursor.endsWith("grab")) {
             isRotating.current = true;
             setInitialSnapshot(selectedShape);
             handleResizeRotate(mainCtx, e.clientX, e.clientY);
-            handleRotate(mainCtx, tempCtx, e.clientX, e.clientY);
-            draw(e);
+            // handleRotate(mainCtx, tempCtx, e.clientX, e.clientY);
+            // draw(e);
             return;
         }
         if (currentToolSelected === "select" && !currentCursor.endsWith("resize") && !currentCursor.endsWith("grab")) {
@@ -149,6 +147,7 @@ export default function Canvas() {
     function stopPainting(e: MouseEvent) {
         if (isResizing.current) {
             setInitialSnapshot(undefined);
+            isResizing.current = false;
             tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
             // BoundingBox(tempCtx, selectedShape);
             const newShapes = shapes.map((shape) => {
@@ -162,6 +161,7 @@ export default function Canvas() {
             setShapesChanged(true);
         } else if (isRotating.current) {
             setInitialSnapshot(undefined);
+            isRotating.current = false;
             tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
             // BoundingBox(tempCtx, selectedShape);
             const newShapes = shapes.map((shape) => {
