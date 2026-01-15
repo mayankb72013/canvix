@@ -60,6 +60,8 @@ export default function useResizeRotate(): [
     const resizeRotation = useRef<number>();
     const resizeCenter = useRef<{ x: number, y: number }>();
     const localAnchor = useRef<{ x: number, y: number }>();
+    const resizeBounds = useRef<{ minX: number, minY: number, maxX: number, maxY: number }>();
+    const resizeFlipRef = useRef<{ x: number, y: number }>();
 
     function handleResizeRotate(
 
@@ -177,12 +179,17 @@ export default function useResizeRotate(): [
 
                 resizeCenter.current = { x: cx, y: cy };
 
-                console.log("Initial x, y : ", cx, cy);
-
                 const minX = Math.min(boundsLeft!, boundsRight!);
                 const minY = Math.min(boundsTop!, boundsBottom!);
                 const maxX = Math.max(boundsLeft!, boundsRight!);
                 const maxY = Math.max(boundsTop!, boundsBottom!);
+
+                resizeBounds.current = { minX, minY, maxX, maxY }
+
+                resizeFlipRef.current = {
+                    x: handle.id === "ne" || handle.id === "se" ? 1 : -1,
+                    y: handle.id === "sw" || handle.id === "se" ? 1 : -1
+                };
 
                 if (handle.id === "ne") {
                     localAnchor.current = { x: minX, y: maxY };
@@ -218,77 +225,99 @@ export default function useResizeRotate(): [
         const { x: mouseLocalX, y: mouseLocalY } = toLocalMouse(clientX, clientY, resizeBase.current!, resizeCenter.current?.x, resizeCenter.current?.y);
 
         if (currentActiveHandle.id === "nw") {
-            // anchorX = initialShape.endX!;
-            // anchorY = initialShape.endY!;
             currentHandleX = mouseLocalX + BOX_PADDING;
             currentHandleY = mouseLocalY + BOX_PADDING;
         } else if (currentActiveHandle.id === "ne") {
-            // anchorX = initialShape.startX!;
-            // anchorY = initialShape.endY!;
             currentHandleX = mouseLocalX - BOX_PADDING;
             currentHandleY = mouseLocalY + BOX_PADDING;
         } else if (currentActiveHandle.id === "sw") {
-            // anchorX = initialShape.endX!;
-            // anchorY = initialShape.startY!;
             currentHandleX = mouseLocalX + BOX_PADDING;
             currentHandleY = mouseLocalY - BOX_PADDING;
         } else {
-            // anchorX = initialShape.startX!;
-            // anchorY = initialShape.startY!;
             currentHandleX = mouseLocalX - BOX_PADDING;
             currentHandleY = mouseLocalY - BOX_PADDING;
         }
 
         if (initialShape.type === "pencil") {
-            console.log("Initial: " + initialShape.pointsInPath);
-            console.log("Selected: " + selectedShape?.pointsInPath)
-            Tx = currentActiveHandle.centerX - localAnchor.current?.x!;
-            Ty = currentActiveHandle.centerY - localAnchor.current?.y!;
-            if (Tx === 0 || Ty === 0) return;
 
-            let currentX = currentHandleX - localAnchor.current?.x!;
-            let currentY = currentHandleY - localAnchor.current?.y!;
+            const base = resizeBase.current!;
+            const center = resizeCenter.current!;
+            const bounds = resizeBounds.current!;
 
-            let scaleX = currentX / Tx;
-            let scaleY = currentY / Ty;
+            let newLocalMinX = Math.min(localAnchor.current?.x!, currentHandleX);
+            let newLocalMinY = Math.min(localAnchor.current?.y!, currentHandleY);
+            let newLocalMaxX = Math.max(localAnchor.current?.x!, currentHandleX);
+            let newLocalMaxY = Math.max(localAnchor.current?.y!, currentHandleY);
 
-            let points = initialShape.pointsInPath?.map(point => ({
-                x: localAnchor.current?.x! + (point.x - localAnchor.current?.x!) * scaleX,
-                y: localAnchor.current?.y! + (point.y - localAnchor.current?.y!) * scaleY
+            const oldW = bounds.maxX - bounds.minX;
+            const oldH = bounds.maxY - bounds.minY;
+            const newW = newLocalMaxX - newLocalMinX;
+            const newH = newLocalMaxY - newLocalMinY;
+
+            const oldCenterX = (bounds.minX + bounds.maxX) / 2;
+            const oldCenterY = (bounds.minY + bounds.maxY) / 2;
+
+            const newCenterX = (newLocalMinX + newLocalMaxX) / 2;
+            const newCenterY = (newLocalMinY + newLocalMaxY) / 2;
+
+            const dx = currentHandleX - localAnchor.current!.x;
+            const dy = currentHandleY - localAnchor.current!.y;
+
+            const signX = Math.sign(dx) || 1;
+            const signY = Math.sign(dy) || 1;
+
+            const finalFlipX = resizeFlipRef.current!.x * signX
+            const finalFlipY = resizeFlipRef.current!.y * signY
+
+
+            const scaleX = finalFlipX * (newW / oldW);
+            const scaleY = finalFlipY * (newH / oldH);
+
+            const scaledLocalPoints = base.pointsInPath!.map(p => ({
+                x: newCenterX + (p.x - oldCenterX) * scaleX,
+                y: newCenterY + (p.y - oldCenterY) * scaleY
             }));
-            let newMinX = localAnchor.current?.x! + (initialShape.startX! - localAnchor.current?.x!) * scaleX;
-            let newMinY = localAnchor.current?.y! + (initialShape.startY! - localAnchor.current?.y!) * scaleY;
-            let newMaxX = localAnchor.current?.x! + (initialShape.endX! - localAnchor.current?.x!) * scaleX;
-            let newMaxY = localAnchor.current?.y! + (initialShape.endY! - localAnchor.current?.y!) * scaleY;
 
-            if (points !== undefined) {
-                const newPath = new Path2D();
-                if (points.length === 0) return;
+            const newLocalCenterX = (newLocalMinX + newLocalMaxX) / 2;
+            const newLocalCenterY = (newLocalMinY + newLocalMaxY) / 2;
 
-                tempCtx.current?.save();
-                newPath.moveTo(points[0]?.x!, points[0]?.y!);
-                for (let i = 1; i < points.length; i++) {
-                    newPath.lineTo(points[i]?.x!, points[i]?.y!);
-                }
-                let updatedShape: Shape | null = null;
-                updatedShape = {
-                    ...initialShape,
-                    path: newPath,
-                    pointsInPath: points,
-                    startX: newMinX,
-                    startY: newMinY,
-                    endX: newMaxX,
-                    endY: newMaxY
-                }
+            const { x: worldCenterX, y: worldCenterY } = toWorldPoint(newLocalCenterX, newLocalCenterY, resizeBase.current!, resizeCenter.current?.x, resizeCenter.current?.y);
 
-                if (updatedShape) {
-                    setSelectedShape(updatedShape);
-                    mainCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
-                    tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
-                    handleRedrawCanvas(mainCtx, tempCtx, shapes, true);
-                }
+            const worldPoints = scaledLocalPoints?.map(pt => {
+                const dx = pt.x - newLocalCenterX;
+                const dy = pt.y - newLocalCenterY;
 
+                return {
+                    x: worldCenterX + dx,
+                    y: worldCenterY + dy
+                };
+            });
+
+
+            if (worldPoints === undefined) return;
+
+            const newPath = new Path2D();
+            newPath.moveTo(worldPoints[0]?.x!, worldPoints[0]?.y!);
+            for (let i = 1; i < worldPoints.length; i++) {
+                newPath.lineTo(worldPoints[i]?.x!, worldPoints[i]?.y!);
             }
+
+            const updatedShape: Shape = {
+                ...base,
+                path: newPath,
+                pointsInPath: worldPoints,
+                startX: worldCenterX - newW / 2,
+                startY: worldCenterY - newH / 2,
+                endX: worldCenterX + newW / 2,
+                endY: worldCenterY + newH / 2,
+                rotation: base.rotation
+            };
+
+            setSelectedShape(updatedShape);
+            mainCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            handleRedrawCanvas(mainCtx, tempCtx, shapes, true);
+
         } else if (initialShape.type === "text") {
 
         } else {
@@ -306,12 +335,6 @@ export default function useResizeRotate(): [
             const newLocalHeight = newLocalMaxY - newLocalMinY;
 
             const { x: worldCenterX, y: worldCenterY } = toWorldPoint(newLocalCenterX, newLocalCenterY, resizeBase.current!, resizeCenter.current?.x, resizeCenter.current?.y);
-
-            console.log("Frozen center:", resizeCenter.current);
-            console.log("Live center:",
-                worldCenterX,
-                worldCenterY
-            );
 
 
             updatedShape = {

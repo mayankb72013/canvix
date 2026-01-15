@@ -14,9 +14,7 @@ export function pencilDraw(ctx: React.RefObject<CanvasRenderingContext2D | null>
         currentPath.lineTo(clientX, clientY);
         ctx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
         ctx.current!.stroke(currentPath);
-        console.log("While drawing : "+currentPath);
     } else {
-        console.log("In draw function: "+currentPath);
         ctx.current!.stroke(currentPath);
     } 
 
