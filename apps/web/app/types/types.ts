@@ -11,6 +11,7 @@ export type Shape = {
     color?: string;
     strokeWidth?: number;
     strokeColor?: string;
+    lineCoordinates?: {startX: number, startY: number, endX: number, endY: number};
 };
 
 export interface Point {x: number, y: number}

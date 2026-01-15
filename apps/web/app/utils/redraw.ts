@@ -36,7 +36,10 @@ export function useRedrawCanvas() {
                 } else if (shape.type === "text") {
                     boxDraw(mainCtx, shape.startX as number, shape.startY as number, shape.endX as number, shape.endY as number, false, shape.strokeColor as string, shape.strokeWidth as number);
                 } else if (shape.type === "line") {
-                    lineDraw(mainCtx, shape.startX as number, shape.startY as number, shape.endX as number, shape.endY as number, false, shape.strokeColor as string, shape.strokeWidth as number);
+                    if (shape.lineCoordinates) {
+                        lineDraw(mainCtx, shape.startX as number, shape.startY as number, shape.endX as number, shape.endY as number, false, shape.strokeColor as string, shape.strokeWidth as number,shape.lineCoordinates);
+                    }
+                    // lineDraw(mainCtx, shape.startX as number, shape.startY as number, shape.endX as number, shape.endY as number, false, shape.strokeColor as string, shape.strokeWidth as number);
                 } else if (shape.type === "ellipse") {
                     ellipseDraw(mainCtx, shape.startX as number, shape.startY as number, shape.endX as number, shape.endY as number, false, shape.strokeColor as string, shape.strokeWidth as number);
                 } else if (shape.type === "box") {
@@ -68,7 +71,10 @@ export function useRedrawCanvas() {
                 } else if (shape.type === "text") {
                     boxDraw(mainCtx, selectedShape.startX as number, selectedShape.startY as number, selectedShape.endX as number, selectedShape.endY as number, false, selectedShape.strokeColor as string, selectedShape.strokeWidth as number);
                 } else if (shape.type === "line") {
-                    lineDraw(mainCtx, selectedShape.startX as number, selectedShape.startY as number, selectedShape.endX as number, selectedShape.endY as number, false, selectedShape.strokeColor as string, selectedShape.strokeWidth as number);
+                    if (selectedShape.lineCoordinates) {
+                        lineDraw(mainCtx, selectedShape.startX as number, selectedShape.startY as number, selectedShape.endX as number, selectedShape.endY as number, false, selectedShape.strokeColor as string, selectedShape.strokeWidth as number, selectedShape.lineCoordinates);
+                    }
+                    // lineDraw(mainCtx, selectedShape.startX as number, selectedShape.startY as number, selectedShape.endX as number, selectedShape.endY as number, false, selectedShape.strokeColor as string, selectedShape.strokeWidth as number);
                 } else if (shape.type === "ellipse") {
                     ellipseDraw(mainCtx, selectedShape.startX as number, selectedShape.startY as number, selectedShape.endX as number, selectedShape.endY as number, false, selectedShape.strokeColor as string, selectedShape.strokeWidth as number);
                 } else if (shape.type === "box") {

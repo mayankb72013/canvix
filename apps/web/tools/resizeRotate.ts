@@ -320,6 +320,68 @@ export default function useResizeRotate(): [
 
         } else if (initialShape.type === "text") {
 
+        } else if (initialShape.type === "line") {
+
+            const newLocalMinX = Math.min(localAnchor.current?.x!, currentHandleX);
+            const newLocalMinY = Math.min(localAnchor.current?.y!, currentHandleY);
+            const newLocalMaxX = Math.max(localAnchor.current?.x!, currentHandleX);
+            const newLocalMaxY = Math.max(localAnchor.current?.y!, currentHandleY);
+
+            const newLocalCenterX = (newLocalMinX + newLocalMaxX) / 2;
+            const newLocalCenterY = (newLocalMinY + newLocalMaxY) / 2;
+
+            const newLocalWidth = newLocalMaxX - newLocalMinX;
+            const newLocalHeight = newLocalMaxY - newLocalMinY;
+
+            const { x: worldCenterX, y: worldCenterY } = toWorldPoint(newLocalCenterX, newLocalCenterY, resizeBase.current!, resizeCenter.current?.x, resizeCenter.current?.y);
+
+            const oldCenterX = (resizeBounds.current?.minX! + resizeBounds.current?.maxX!) / 2;
+            const oldCenterY = (resizeBounds.current?.minY! + resizeBounds.current?.maxY!) / 2;
+
+            const oldW = resizeBounds.current?.maxX! - resizeBounds.current?.minX!;
+            const oldH = resizeBounds.current?.maxY! - resizeBounds.current?.minY!;
+
+            const dx = currentHandleX - localAnchor.current!.x;
+            const dy = currentHandleY - localAnchor.current!.y;
+
+            const signX = Math.sign(dx) || 1;
+            const signY = Math.sign(dy) || 1;
+
+            const finalFlipX = resizeFlipRef.current!.x * signX
+            const finalFlipY = resizeFlipRef.current!.y * signY
+
+            const scaleX = finalFlipX * (newLocalWidth / oldW);
+            const scaleY = finalFlipY * (newLocalHeight / oldH);
+
+            let lineStartX = newLocalCenterX + (resizeBase.current?.lineCoordinates?.startX! - oldCenterX) * scaleX
+            let lineStartY = newLocalCenterY + (resizeBase.current?.lineCoordinates?.startY! - oldCenterY) * scaleY
+            let lineEndX = newLocalCenterX + (resizeBase.current?.lineCoordinates?.endX! - oldCenterX) * scaleX
+            let lineEndY = newLocalCenterY + (resizeBase.current?.lineCoordinates?.endY! - oldCenterY) * scaleY
+
+            lineStartX = worldCenterX + (lineStartX - newLocalCenterX);
+            lineStartY = worldCenterY + (lineStartY - newLocalCenterY);
+            lineEndX = worldCenterX + (lineEndX - newLocalCenterX);
+            lineEndY = worldCenterY + (lineEndY - newLocalCenterY);
+
+            let lineCoordinates = { startX: lineStartX, startY: lineStartY, endX: lineEndX, endY: lineEndY };
+            let updatedShape: Shape | null = null;
+
+            updatedShape = {
+                ...initialShape,
+                startX: worldCenterX - newLocalWidth / 2,
+                startY: worldCenterY - newLocalHeight / 2,
+                endX: worldCenterX + newLocalWidth / 2,
+                endY: worldCenterY + newLocalHeight / 2,
+                rotation: resizeBase.current?.rotation,
+                lineCoordinates
+            };
+
+            if (updatedShape) {
+                setSelectedShape(updatedShape);
+                mainCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                handleRedrawCanvas(mainCtx, tempCtx, shapes, true);
+            }
         } else {
             const newLocalMinX = Math.min(localAnchor.current?.x!, currentHandleX);
             const newLocalMinY = Math.min(localAnchor.current?.y!, currentHandleY);
@@ -335,7 +397,6 @@ export default function useResizeRotate(): [
             const newLocalHeight = newLocalMaxY - newLocalMinY;
 
             const { x: worldCenterX, y: worldCenterY } = toWorldPoint(newLocalCenterX, newLocalCenterY, resizeBase.current!, resizeCenter.current?.x, resizeCenter.current?.y);
-
 
             updatedShape = {
                 ...initialShape,

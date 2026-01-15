@@ -254,6 +254,7 @@ export default function Canvas() {
                     strokeColor: currentStrokeColor,
                     strokeWidth: currentStrokeWidth,
                     rotation: 0,
+                    lineCoordinates: { startX: startX.current, startY: startY.current, endX: e.clientX, endY: e.clientY }
                 }]
                 undo.push(newShapes);
                 return newShapes;
