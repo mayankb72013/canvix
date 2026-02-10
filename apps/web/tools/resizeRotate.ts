@@ -8,7 +8,7 @@ import {
     shapeSelected,
     strokeWidth,
 } from "../recoil/atoms";
-import { directions, Point, Shape } from "../app/types/types";
+import { Shape } from "../app/types/types";
 import { useRedrawCanvas } from "../app/utils/redraw";
 import { HandleType } from "./resizeRotateHover";
 import { useRef } from "react";
@@ -64,7 +64,6 @@ export default function useResizeRotate(): [
     const resizeFlipRef = useRef<{ x: number, y: number }>();
 
     function handleResizeRotate(
-
         ctx: React.RefObject<CanvasRenderingContext2D | null>,
         clientX: number,
         clientY: number

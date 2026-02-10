@@ -17,6 +17,7 @@ import useResizeRotateHover from "../tools/resizeRotateHover";
 import useResizeRotate from "../tools/resizeRotate";
 import BoundingBox from "../tools/boundingBox";
 import { useRedrawCanvas } from "../app/utils/redraw";
+import { useTranslate } from "../tools/translate";
 
 export default function Canvas() {
     const mainCanvas = useRef<HTMLCanvasElement>(null);
@@ -26,6 +27,7 @@ export default function Canvas() {
     const isPainting = useRef<boolean>(false);
     const isResizing = useRef<boolean>(false);
     const isRotating = useRef<boolean>(false);
+    const isTranslating = useRef<boolean>(false);
     const currentToolSelected = useRecoilValue(toolSelected);
     const startX = useRef<number>(0);
     const startY = useRef<number>(0);
@@ -57,6 +59,7 @@ export default function Canvas() {
     const [handleResizeRotate, handleResize, handleRotate] = useResizeRotate();
     const [selectedShape, setSelectedShape] = useRecoilState(shapeSelected);
     const [initialSnapshot, setInitialSnapshot] = useRecoilState(originalSnapshot);
+    const [handleTranslateClick, handleTranslate] = useTranslate();
 
 
     const reDrawCanvas = useRedrawCanvas();
@@ -92,12 +95,27 @@ export default function Canvas() {
 
     // Handle triggered redraw
     useEffect(() => {
-        if (shapesChanged) {
-            mainCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            reDrawCanvas(mainCtx, tempCtx, shapes, isResizing.current, isRotating.current);
-            setShapesChanged(false);
-        }
-    }, [shapesChanged]);
+        console.log("3");
+        mainCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        reDrawCanvas(mainCtx, tempCtx, shapes, isResizing.current, isRotating.current);
+    }, [shapes]);
+
+    useEffect(() => {
+        if (!selectedShape) return;
+
+        const newSelectedShape = {...selectedShape, strokeColor: currentStrokeColor, strokeWidth: currentStrokeWidth}
+        setSelectedShape(newSelectedShape);
+        setShapes((prevShapes) => (
+            prevShapes.map((shape) => {
+                if (shape.id === selectedShape?.id) {
+                    return { ...shape, strokeColor: currentStrokeColor, strokeWidth: currentStrokeWidth };
+                } else {
+                    return shape;
+                }
+            })
+        ))
+    
+    }, [currentStrokeColor, currentStrokeWidth])
 
     function startPainting(e: MouseEvent) {
 
@@ -108,17 +126,20 @@ export default function Canvas() {
             // handleResize(mainCtx, tempCtx, e.clientX, e.clientY);
             // draw(e);
             return;
-        }
-        if (currentCursor.endsWith("grab")) {
+        } else if (currentCursor.endsWith("grab")) {
             isRotating.current = true;
             setInitialSnapshot(selectedShape);
             handleResizeRotate(mainCtx, e.clientX, e.clientY);
             // handleRotate(mainCtx, tempCtx, e.clientX, e.clientY);
             // draw(e);
             return;
-        }
-        if (currentToolSelected === "select" && !currentCursor.endsWith("resize") && !currentCursor.endsWith("grab")) {
+        } else if (currentToolSelected === "select" && !isTranslating.current) {
             handleSelect(mainCtx, tempCtx, e.clientX, e.clientY);
+            if (selectedShape) {
+                setInitialSnapshot(selectedShape);
+                handleTranslateClick(mainCtx, tempCtx, e.clientX, e.clientY);
+                isTranslating.current = true;
+            }
             return;
         }
 
@@ -145,36 +166,23 @@ export default function Canvas() {
     }
 
     function stopPainting(e: MouseEvent) {
-        if (isResizing.current) {
-            setInitialSnapshot(undefined);
-            isResizing.current = false;
-            tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            // BoundingBox(tempCtx, selectedShape);
-            const newShapes = shapes.map((shape) => {
-                if (shape.id === selectedShape?.id) {
-                    return selectedShape;
-                } else {
-                    return shape;
-                }
-            })
-            setShapes(newShapes);
-            setShapesChanged(true);
-        } else if (isRotating.current) {
-            setInitialSnapshot(undefined);
-            isRotating.current = false;
-            tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            // BoundingBox(tempCtx, selectedShape);
-            const newShapes = shapes.map((shape) => {
-                if (shape.id === selectedShape?.id) {
-                    return selectedShape;
-                } else {
-                    return shape;
-                }
-            })
-            setShapes(newShapes);
-            setShapesChanged(true);
-        }
+        setInitialSnapshot(undefined)
+        tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+        const newShapes = shapes.map((shape) => {
+            if (shape.id === selectedShape?.id) {
+                return selectedShape;
+            } else {
+                return shape;
+            }
+        })
+        setShapes(newShapes);
+        setShapesChanged(true);
+        isRotating.current = false;
+        isResizing.current = false;
+        isTranslating.current = false;
         isPainting.current = false;
+
         if (currentToolSelected === "pencil") {
 
             setShapes(prev => {
@@ -271,7 +279,7 @@ export default function Canvas() {
     }
 
     function draw(e: MouseEvent) {
-        if (!isPainting.current && !isResizing.current && !isRotating.current) {
+        if (!isPainting.current && !isResizing.current && !isRotating.current && !isTranslating.current) {
             const isShape = handleHover(tempCtx, e.clientX, e.clientY);
             if (isShape && currentToolSelected === "select") {
                 setCurrentCursor("cursor-move");
@@ -285,12 +293,16 @@ export default function Canvas() {
             }
             return;
         };
-        if (!isPainting.current && !isRotating.current && isResizing.current) {
+        if (!isPainting.current && !isRotating.current && isResizing.current && !isTranslating.current) {
             handleResize(mainCtx, tempCtx, e.clientX, e.clientY);
             return;
         }
-        if (!isPainting.current && !isResizing.current && isRotating.current) {
+        if (!isPainting.current && !isResizing.current && isRotating.current && !isTranslating.current) {
             handleRotate(mainCtx, tempCtx, e.clientX, e.clientY);
+            return;
+        }
+        if (!isPainting.current && !isRotating.current && !isResizing.current && isTranslating.current) {
+            handleTranslate(mainCtx, tempCtx, e.clientX, e.clientY);
             return;
         }
         if (currentToolSelected === "pencil") {

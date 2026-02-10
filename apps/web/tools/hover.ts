@@ -8,6 +8,7 @@ import { toLocalMouse } from "./Mouse";
 export default function useHover() {
     const shapes = useRecoilValue(shapesArray);
     const lineWidth = useRecoilValue(strokeWidth);
+    const selectedShape = useRecoilValue(shapeSelected);
 
     function handleHover(ctx: React.RefObject<CanvasRenderingContext2D | null>, clientX: number, clientY: number) {
 
@@ -30,6 +31,17 @@ export default function useHover() {
             } = shape;
 
             const { x, y } = toLocalMouse(clientX, clientY, shape);
+
+            if (selectedShape) {
+                const minX = Math.min(selectedShape.startX!, selectedShape.endX!);
+                const maxX = Math.max(selectedShape.startX!, selectedShape.endX!);
+                const minY = Math.min(selectedShape.startY!, selectedShape.endY!);
+                const maxY = Math.max(selectedShape.startY!, selectedShape.endY!);
+                
+                if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+                  return true;
+                }
+            }
 
             let check = false;
             if (type === "pencil") {
@@ -66,7 +78,6 @@ export default function useHover() {
                 return shape;
             }
         })
-        
         
         ctx.current?.restore();
         const currentShape = hits.pop();
