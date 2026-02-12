@@ -1,5 +1,5 @@
 export type Shape = {
-    id: number;
+    id: string;
     type: Types;
     startX?: number;
     startY?: number;

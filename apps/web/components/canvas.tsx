@@ -34,7 +34,7 @@ export default function Canvas() {
     const currentPath = useRef<Path2D>();
 
     const [shapes, setShapes] = useRecoilState(shapesArray);
-    const [shapesId, setShapesId] = useState(0);
+    const [shapesId, setShapesId] = useState(crypto.randomUUID());
 
     const currentStrokeColor = useRecoilValue(strokeColor);
     const currentStrokeWidth = useRecoilValue(strokeWidth);
@@ -218,7 +218,7 @@ export default function Canvas() {
                     return newShapes;
                 });
                 redo.length = 0;
-                setShapesId(s => s + 1);
+                setShapesId(crypto.randomUUID());
 
                 tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
                 pencilDraw(mainCtx, startX.current, startY.current, currentPath.current as Path2D, false, currentStrokeColor, currentStrokeWidth);
@@ -240,7 +240,7 @@ export default function Canvas() {
                     return newShapes;
                 })
                 redo.length = 0;
-                setShapesId(s => s + 1);
+                setShapesId(crypto.randomUUID());
 
                 tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
                 boxDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
@@ -261,7 +261,7 @@ export default function Canvas() {
                     return newShapes;
                 })
                 redo.length = 0;
-                setShapesId(s => s + 1);
+                setShapesId(crypto.randomUUID());
 
                 tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
                 ellipseDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
@@ -283,7 +283,7 @@ export default function Canvas() {
                     return newShapes;
                 })
                 redo.length = 0;
-                setShapesId(s => s + 1);
+                setShapesId(crypto.randomUUID());
 
                 tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
                 lineDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
