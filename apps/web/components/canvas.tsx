@@ -4,7 +4,7 @@ import { MouseEvent, useState } from "react";
 import { useEffect, useRef } from "react";
 import { pencilDraw } from "../drawingLogic/pencil";
 import { useRecoilState, useRecoilValue } from "recoil";
-import { clearCanvas, cursorState, originalSnapshot, shapesArray, shapesChange, shapeSelected, strokeColor, strokeWidth, toolSelected, } from "../recoil/atoms";
+import { clearCanvas, cursorState, originalSnapshot, shapesArray, shapeSelected, strokeColor, strokeWidth, toolSelected, undoClicked, } from "../recoil/atoms";
 import { boxDraw } from "../drawingLogic/box";
 import { ellipseDraw } from "../drawingLogic/ellipse";
 import { lineDraw } from "../drawingLogic/line";
@@ -34,7 +34,6 @@ export default function Canvas() {
     const currentPath = useRef<Path2D>();
 
     const [shapes, setShapes] = useRecoilState(shapesArray);
-    const [shapesChanged, setShapesChanged] = useRecoilState(shapesChange);
     const [shapesId, setShapesId] = useState(0);
 
     const currentStrokeColor = useRecoilValue(strokeColor);
@@ -60,7 +59,7 @@ export default function Canvas() {
     const [selectedShape, setSelectedShape] = useRecoilState(shapeSelected);
     const [initialSnapshot, setInitialSnapshot] = useRecoilState(originalSnapshot);
     const [handleTranslateClick, handleTranslate] = useTranslate();
-
+    const [undoClick, setUndoClick] = useRecoilState(undoClicked);
 
     const reDrawCanvas = useRedrawCanvas();
 
@@ -103,19 +102,25 @@ export default function Canvas() {
     useEffect(() => {
         if (!selectedShape) return;
 
-        const newSelectedShape = {...selectedShape, strokeColor: currentStrokeColor, strokeWidth: currentStrokeWidth}
+        const newSelectedShape = { ...selectedShape, strokeColor: currentStrokeColor, strokeWidth: currentStrokeWidth }
         setSelectedShape(newSelectedShape);
-        setShapes((prevShapes) => (
-            prevShapes.map((shape) => {
-                if (shape.id === selectedShape?.id) {
-                    return { ...shape, strokeColor: currentStrokeColor, strokeWidth: currentStrokeWidth };
-                } else {
-                    return shape;
-                }
-            })
-        ))
-    
+        const newShapes = shapes.map((shape) => {
+            if (shape.id === selectedShape?.id) {
+                return { ...shape, strokeColor: currentStrokeColor, strokeWidth: currentStrokeWidth };
+            } else {
+                return shape;
+            }
+        })
+
+        setShapes(newShapes);
+        undo.push(newShapes);
+
     }, [currentStrokeColor, currentStrokeWidth])
+
+    useEffect(() => {
+        tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        setUndoClick(false);
+    }, [undoClick])
 
     function startPainting(e: MouseEvent) {
 
@@ -166,116 +171,127 @@ export default function Canvas() {
     }
 
     function stopPainting(e: MouseEvent) {
-        setInitialSnapshot(undefined)
-        tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        if (isResizing.current || isRotating.current || isTranslating.current) {
+            setInitialSnapshot(undefined)
+            tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-        const newShapes = shapes.map((shape) => {
-            if (shape.id === selectedShape?.id) {
-                return selectedShape;
-            } else {
-                return shape;
+            let anyChange = false;
+            const newShapes = shapes.map((shape) => {
+                if (shape.id === selectedShape?.id) {
+                    if (shape !== selectedShape) {
+                        anyChange = true;
+                    }
+                    return selectedShape;
+                } else {
+                    return shape;
+                }
+            })
+            isRotating.current = false;
+            isResizing.current = false;
+            isTranslating.current = false;
+            setShapes(newShapes);
+            if (anyChange) {
+                undo.push(newShapes);
             }
-        })
-        setShapes(newShapes);
-        setShapesChanged(true);
-        isRotating.current = false;
-        isResizing.current = false;
-        isTranslating.current = false;
-        isPainting.current = false;
-
-        if (currentToolSelected === "pencil") {
-
-            setShapes(prev => {
-                const newShapes: Shape[] = [...prev, {
-                    id: shapesId,
-                    type: "pencil",
-                    path: currentPath.current as Path2D,
-                    strokeColor: currentStrokeColor,
-                    strokeWidth: currentStrokeWidth,
-                    startX: minX,
-                    startY: minY,
-                    endX: maxX,
-                    endY: maxY,
-                    pointsInPath: points,
-                    rotation: 0
-                }];
-                undo.push(newShapes);
-                return newShapes;
-            });
-            redo.length = 0;
-            setShapesId(s => s + 1);
-
-            tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            pencilDraw(mainCtx, startX.current, startY.current, currentPath.current as Path2D, false, currentStrokeColor, currentStrokeWidth);
-
-        } else if (currentToolSelected === "box") {
-            setShapes(s => {
-                const newShapes: Shape[] = [...s, {
-                    id: shapesId,
-                    type: "box",
-                    startX: startX.current,
-                    startY: startY.current,
-                    endX: e.clientX,
-                    endY: e.clientY,
-                    strokeColor: currentStrokeColor,
-                    strokeWidth: currentStrokeWidth,
-                    rotation: 0
-                }]
-                undo.push(newShapes);
-                return newShapes;
-            })
-            redo.length = 0;
-            setShapesId(s => s + 1);
-
-            tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            boxDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
-        } else if (currentToolSelected === "ellipse") {
-            setShapes(s => {
-                const newShapes: Shape[] = [...s, {
-                    id: shapesId,
-                    type: "ellipse",
-                    startX: startX.current,
-                    startY: startY.current,
-                    endX: e.clientX,
-                    endY: e.clientY,
-                    rotation: 0,
-                    strokeColor: currentStrokeColor,
-                    strokeWidth: currentStrokeWidth,
-                }]
-                undo.push(newShapes);
-                return newShapes;
-            })
-            redo.length = 0;
-            setShapesId(s => s + 1);
-
-            tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            ellipseDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
-        } else if (currentToolSelected === "line") {
-            setShapes(s => {
-                const newShapes: Shape[] = [...s, {
-                    id: shapesId,
-                    type: "line",
-                    startX: startX.current,
-                    startY: startY.current,
-                    endX: e.clientX,
-                    endY: e.clientY,
-                    strokeColor: currentStrokeColor,
-                    strokeWidth: currentStrokeWidth,
-                    rotation: 0,
-                    lineCoordinates: { startX: startX.current, startY: startY.current, endX: e.clientX, endY: e.clientY }
-                }]
-                undo.push(newShapes);
-                return newShapes;
-            })
-            redo.length = 0;
-            setShapesId(s => s + 1);
-
-            tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            lineDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
-        } else if (currentToolSelected === "text") {
-
         }
-        mainCtx.current!.beginPath();
+        if (isPainting.current) {
+
+            isPainting.current = false;
+
+            if (currentToolSelected === "pencil") {
+
+                setShapes(prev => {
+                    const newShapes: Shape[] = [...prev, {
+                        id: shapesId,
+                        type: "pencil",
+                        path: currentPath.current as Path2D,
+                        strokeColor: currentStrokeColor,
+                        strokeWidth: currentStrokeWidth,
+                        startX: minX,
+                        startY: minY,
+                        endX: maxX,
+                        endY: maxY,
+                        pointsInPath: points,
+                        rotation: 0
+                    }];
+                    undo.push(newShapes);
+                    return newShapes;
+                });
+                redo.length = 0;
+                setShapesId(s => s + 1);
+
+                tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                pencilDraw(mainCtx, startX.current, startY.current, currentPath.current as Path2D, false, currentStrokeColor, currentStrokeWidth);
+
+            } else if (currentToolSelected === "box") {
+                setShapes(s => {
+                    const newShapes: Shape[] = [...s, {
+                        id: shapesId,
+                        type: "box",
+                        startX: startX.current,
+                        startY: startY.current,
+                        endX: e.clientX,
+                        endY: e.clientY,
+                        strokeColor: currentStrokeColor,
+                        strokeWidth: currentStrokeWidth,
+                        rotation: 0
+                    }]
+                    undo.push(newShapes);
+                    return newShapes;
+                })
+                redo.length = 0;
+                setShapesId(s => s + 1);
+
+                tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                boxDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
+            } else if (currentToolSelected === "ellipse") {
+                setShapes(s => {
+                    const newShapes: Shape[] = [...s, {
+                        id: shapesId,
+                        type: "ellipse",
+                        startX: startX.current,
+                        startY: startY.current,
+                        endX: e.clientX,
+                        endY: e.clientY,
+                        rotation: 0,
+                        strokeColor: currentStrokeColor,
+                        strokeWidth: currentStrokeWidth,
+                    }]
+                    undo.push(newShapes);
+                    return newShapes;
+                })
+                redo.length = 0;
+                setShapesId(s => s + 1);
+
+                tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                ellipseDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
+            } else if (currentToolSelected === "line") {
+                setShapes(s => {
+                    const newShapes: Shape[] = [...s, {
+                        id: shapesId,
+                        type: "line",
+                        startX: startX.current,
+                        startY: startY.current,
+                        endX: e.clientX,
+                        endY: e.clientY,
+                        strokeColor: currentStrokeColor,
+                        strokeWidth: currentStrokeWidth,
+                        rotation: 0,
+                        lineCoordinates: { startX: startX.current, startY: startY.current, endX: e.clientX, endY: e.clientY }
+                    }]
+                    undo.push(newShapes);
+                    return newShapes;
+                })
+                redo.length = 0;
+                setShapesId(s => s + 1);
+
+                tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                lineDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
+            } else if (currentToolSelected === "text") {
+
+            }
+            mainCtx.current!.beginPath();
+        }
     }
 
     function draw(e: MouseEvent) {

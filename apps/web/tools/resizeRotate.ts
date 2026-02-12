@@ -4,7 +4,6 @@ import {
     cursorState,
     originalSnapshot,
     shapesArray,
-    shapesChange,
     shapeSelected,
     strokeWidth,
 } from "../recoil/atoms";
@@ -45,7 +44,6 @@ export default function useResizeRotate(): [
     const initialShape = useRecoilValue(originalSnapshot);
     const setCurrentCursor = useSetRecoilState(cursorState);
     const lineWidth = useRecoilValue(strokeWidth);
-    const setShapesChange = useSetRecoilState(shapesChange);
     const [shapes, setShapes] = useRecoilState(shapesArray);
     const [currentActiveHandle, setCurrentActiveHandle] =
         useRecoilState(activeHandle);

@@ -1,7 +1,7 @@
 import { atom } from "recoil";
 import { CursorTypes, directions, Shape, Tools, Types } from "../app/types/types";
 import { devNull } from "node:os";
-import { HandleType } from "../tools/resizeRotate";
+import { HandleType } from "../tools/resizeRotateHover";
 
 export const toolSelected = atom<Types | Tools>({
     key: "toolSelected",
@@ -39,11 +39,10 @@ export const shapesArray = atom<Shape[]>({
     default: []
 })
 
-export const shapesChange = atom<boolean>({
-    key: "shapesChange",
+export const undoClicked = atom<boolean>({
+    key: "undoClicked",
     default: false
 })
-
 export const cursorState = atom<CursorTypes>({
     key: "cursorState",
     default: "cursor-default"
