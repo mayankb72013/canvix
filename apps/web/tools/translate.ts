@@ -1,7 +1,7 @@
 import { useRecoilState, useRecoilValue } from "recoil";
 import { originalSnapshot, shapesArray, shapeSelected } from "../recoil/atoms";
 import { useRef } from "react";
-import { Shape } from "../app/types/types";
+import { Shape } from "@repo/types";
 import { useRedrawCanvas } from "../app/utils/redraw";
 
 export function useTranslate(): [

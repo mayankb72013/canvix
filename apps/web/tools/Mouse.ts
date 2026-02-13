@@ -1,4 +1,4 @@
-import { Shape } from "../app/types/types";
+import { Shape } from "@repo/types";
 
 export function toLocalMouse(px: number, py: number, shape: Shape, centerX?: number, centerY?: number) {
   if (!shape.rotation) return { x: px, y: py };

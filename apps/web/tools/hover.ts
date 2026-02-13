@@ -1,7 +1,7 @@
 import React from "react";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import { shapesArray, shapeSelected, strokeWidth } from "../recoil/atoms";
-import { Shape } from "../app/types/types";
+import { Shape } from "@repo/types";
 import BoundingBox from "./boundingBox";
 import { toLocalMouse } from "./Mouse";
 

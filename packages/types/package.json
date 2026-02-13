@@ -1,0 +1,27 @@
+{
+  "name": "@repo/types",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc -b"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    }
+  },
+  "main": "dist/types.js",
+  "types": "dist/types.d.ts",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^22.15.30",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:^"
+  }
+}

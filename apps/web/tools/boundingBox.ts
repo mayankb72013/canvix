@@ -1,4 +1,4 @@
-import { Shape } from "../app/types/types";
+import { Shape } from "@repo/types";
 
 export default function BoundingBox(ctx: React.RefObject<CanvasRenderingContext2D | null>, shape?: Shape, clearFlag: boolean = true) {
 

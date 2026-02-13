@@ -7,7 +7,7 @@ import {
     shapeSelected,
     strokeWidth,
 } from "../recoil/atoms";
-import { Shape } from "../app/types/types";
+import { Shape } from "@repo/types";
 import { useRedrawCanvas } from "../app/utils/redraw";
 import { HandleType } from "./resizeRotateHover";
 import { useRef } from "react";

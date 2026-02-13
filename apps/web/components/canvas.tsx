@@ -8,7 +8,7 @@ import { clearCanvas, cursorState, originalSnapshot, shapesArray, shapeSelected,
 import { boxDraw } from "../drawingLogic/box";
 import { ellipseDraw } from "../drawingLogic/ellipse";
 import { lineDraw } from "../drawingLogic/line";
-import { Point, Shape } from "../app/types/types";
+import type { Shape, Point } from "@repo/types"
 import { undo } from "../app/undo-redo/redo";
 import { redo } from "../app/undo-redo/undo";
 import useSelect from "../tools/select";

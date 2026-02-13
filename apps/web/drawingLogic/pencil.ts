@@ -1,4 +1,4 @@
-import { Point } from "../app/types/types";
+import type { Point } from "@repo/types";
 
 export function pencilDraw(ctx: React.RefObject<CanvasRenderingContext2D | null>, clientX: number, clientY: number, currentPath: Path2D, isDrawing: boolean,  strokeColor: string, strokeWidth: number) {
     ctx.current!.lineCap = "round"
