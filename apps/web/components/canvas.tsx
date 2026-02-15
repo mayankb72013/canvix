@@ -9,8 +9,8 @@ import { boxDraw } from "../drawingLogic/box";
 import { ellipseDraw } from "../drawingLogic/ellipse";
 import { lineDraw } from "../drawingLogic/line";
 import type { Shape, Point } from "@repo/types"
-import { undo } from "../app/undo-redo/redo";
-import { redo } from "../app/undo-redo/undo";
+import { undo } from "../app/undo-redo/undo";
+import { redo } from "../app/undo-redo/redo";
 import useSelect from "../tools/select";
 import useHover from "../tools/hover";
 import useResizeRotateHover from "../tools/resizeRotateHover";

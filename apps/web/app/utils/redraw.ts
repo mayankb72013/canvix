@@ -3,7 +3,7 @@ import { boxDraw } from "../../drawingLogic/box";
 import { ellipseDraw } from "../../drawingLogic/ellipse";
 import { lineDraw } from "../../drawingLogic/line";
 import { pencilDraw } from "../../drawingLogic/pencil";
-import { Shape } from "../types/types";
+import { Shape } from "@repo/types";
 import { originalSnapshot, shapeSelected } from "../../recoil/atoms";
 import BoundingBox from "../../tools/boundingBox";
 

@@ -1,3 +1,3 @@
-import { Shape } from "../types/types";
+import { Shape } from "@repo/types";
 
-export const undo: Shape[][] = [];
+export const redo: Shape[][] = [];

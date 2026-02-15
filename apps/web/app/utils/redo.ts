@@ -1,8 +1,8 @@
 import { useRecoilState } from "recoil";
 import { shapesArray, } from "../../recoil/atoms";
-import { redo } from "../undo-redo/undo";
-import { Shape } from "../types/types";
-import { undo } from "../undo-redo/redo";
+import { redo } from "../undo-redo/redo";
+import { Shape } from "@repo/types";
+import { undo } from "../undo-redo/undo";
 
 export function useRedoHandler() {
 
