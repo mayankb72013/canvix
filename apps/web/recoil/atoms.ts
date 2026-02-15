@@ -1,5 +1,5 @@
 import { atom } from "recoil";
-import { CursorTypes, directions, Shape, Tools, Types } from "@repo/types";
+import { CursorTypes, Directions, Shape, Tools, Types } from "@repo/types";
 import { devNull } from "node:os";
 import { HandleType } from "../tools/resizeRotateHover";
 

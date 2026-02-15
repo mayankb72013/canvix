@@ -4,7 +4,7 @@ import {
     shapeSelected,
     strokeWidth,
 } from "../recoil/atoms";
-import { directions } from "@repo/types";
+import { Directions } from "@repo/types";
 import { toLocalMouse } from "./Mouse";
 
 const HANDLE_SIZE = 8;
@@ -15,7 +15,7 @@ const ROTATION_HANDLE_RADIUS = 6;
 const ROTATION_HANDLE_OFFSET = 24;
 
 export interface HandleType {
-    id: directions;
+    id: Directions;
     centerX: number;
     centerY: number;
     hitX: number;

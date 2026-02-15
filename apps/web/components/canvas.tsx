@@ -8,7 +8,7 @@ import { clearCanvas, cursorState, originalSnapshot, shapesArray, shapeSelected,
 import { boxDraw } from "../drawingLogic/box";
 import { ellipseDraw } from "../drawingLogic/ellipse";
 import { lineDraw } from "../drawingLogic/line";
-import type { Shape, Point } from "@repo/types"
+import type { Shape, Point, EventType } from "@repo/types"
 import { undo } from "../app/undo-redo/undo";
 import { redo } from "../app/undo-redo/redo";
 import useSelect from "../tools/select";
@@ -94,7 +94,6 @@ export default function Canvas() {
 
     // Handle triggered redraw
     useEffect(() => {
-        console.log("3");
         mainCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
         reDrawCanvas(mainCtx, tempCtx, shapes, isResizing.current, isRotating.current);
     }, [shapes]);
@@ -104,16 +103,24 @@ export default function Canvas() {
 
         const newSelectedShape = { ...selectedShape, strokeColor: currentStrokeColor, strokeWidth: currentStrokeWidth }
         setSelectedShape(newSelectedShape);
+        let initialShape;
         const newShapes = shapes.map((shape) => {
             if (shape.id === selectedShape?.id) {
+                initialShape = shape;
                 return { ...shape, strokeColor: currentStrokeColor, strokeWidth: currentStrokeWidth };
             } else {
                 return shape;
             }
         })
-
         setShapes(newShapes);
-        undo.push(newShapes);
+
+        const pushEvent: EventType = {
+            type: "updated",
+            shapeId: newSelectedShape.id,
+            initialShape: initialShape,
+            updatedShape: newSelectedShape
+        }
+        undo.push(pushEvent);
 
     }, [currentStrokeColor, currentStrokeWidth])
 
@@ -176,9 +183,11 @@ export default function Canvas() {
             tempCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
             let anyChange = false;
+            let initialShape;
             const newShapes = shapes.map((shape) => {
                 if (shape.id === selectedShape?.id) {
                     if (shape !== selectedShape) {
+                        initialShape = shape;
                         anyChange = true;
                     }
                     return selectedShape;
@@ -191,7 +200,14 @@ export default function Canvas() {
             isTranslating.current = false;
             setShapes(newShapes);
             if (anyChange) {
-                undo.push(newShapes);
+                const pushEvent: EventType = {
+                    type: "updated",
+                    shapeId: initialShape!.id,
+                    initialShape: initialShape,
+                    updatedShape: selectedShape
+                }
+        
+                undo.push(pushEvent);
             }
         }
         if (isPainting.current) {
@@ -201,7 +217,7 @@ export default function Canvas() {
             if (currentToolSelected === "pencil") {
 
                 setShapes(prev => {
-                    const newShapes: Shape[] = [...prev, {
+                    const newShape: Shape = {
                         id: shapesId,
                         type: "pencil",
                         path: currentPath.current as Path2D,
@@ -213,8 +229,17 @@ export default function Canvas() {
                         endY: maxY,
                         pointsInPath: points,
                         rotation: 0
-                    }];
-                    undo.push(newShapes);
+                    }
+                    const newShapes: Shape[] = [...prev, newShape];
+
+                    const pushEvent: EventType = {
+                        type: "insertion",
+                        shapeId: shapesId,
+                        initialShape: undefined,
+                        updatedShape: newShape
+                    }
+            
+                    undo.push(pushEvent);
                     return newShapes;
                 });
                 redo.length = 0;
@@ -224,8 +249,9 @@ export default function Canvas() {
                 pencilDraw(mainCtx, startX.current, startY.current, currentPath.current as Path2D, false, currentStrokeColor, currentStrokeWidth);
 
             } else if (currentToolSelected === "box") {
-                setShapes(s => {
-                    const newShapes: Shape[] = [...s, {
+                
+                setShapes(prev => {
+                    const newShape: Shape = {
                         id: shapesId,
                         type: "box",
                         startX: startX.current,
@@ -235,18 +261,28 @@ export default function Canvas() {
                         strokeColor: currentStrokeColor,
                         strokeWidth: currentStrokeWidth,
                         rotation: 0
-                    }]
-                    undo.push(newShapes);
+                    }
+                    const newShapes: Shape[] = [...prev, newShape];
+
+                    const pushEvent: EventType = {
+                        type: "insertion",
+                        shapeId: shapesId,
+                        initialShape: undefined,
+                        updatedShape: newShape
+                    }
+            
+                    undo.push(pushEvent);
                     return newShapes;
-                })
+                });
                 redo.length = 0;
                 setShapesId(crypto.randomUUID());
 
                 tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
                 boxDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
             } else if (currentToolSelected === "ellipse") {
-                setShapes(s => {
-                    const newShapes: Shape[] = [...s, {
+                
+                setShapes(prev => {
+                    const newShape: Shape = {
                         id: shapesId,
                         type: "ellipse",
                         startX: startX.current,
@@ -256,18 +292,28 @@ export default function Canvas() {
                         rotation: 0,
                         strokeColor: currentStrokeColor,
                         strokeWidth: currentStrokeWidth,
-                    }]
-                    undo.push(newShapes);
+                    }
+                    const newShapes: Shape[] = [...prev, newShape];
+
+                    const pushEvent: EventType = {
+                        type: "insertion",
+                        shapeId: shapesId,
+                        initialShape: undefined,
+                        updatedShape: newShape
+                    }
+            
+                    undo.push(pushEvent);
                     return newShapes;
-                })
+                });
                 redo.length = 0;
                 setShapesId(crypto.randomUUID());
 
                 tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
                 ellipseDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
             } else if (currentToolSelected === "line") {
-                setShapes(s => {
-                    const newShapes: Shape[] = [...s, {
+                
+                setShapes(prev => {
+                    const newShape: Shape = {
                         id: shapesId,
                         type: "line",
                         startX: startX.current,
@@ -278,10 +324,19 @@ export default function Canvas() {
                         strokeWidth: currentStrokeWidth,
                         rotation: 0,
                         lineCoordinates: { startX: startX.current, startY: startY.current, endX: e.clientX, endY: e.clientY }
-                    }]
-                    undo.push(newShapes);
+                    }
+                    const newShapes: Shape[] = [...prev, newShape];
+
+                    const pushEvent: EventType = {
+                        type: "insertion",
+                        shapeId: shapesId,
+                        initialShape: undefined,
+                        updatedShape: newShape
+                    }
+            
+                    undo.push(pushEvent);
                     return newShapes;
-                })
+                });
                 redo.length = 0;
                 setShapesId(crypto.randomUUID());
 

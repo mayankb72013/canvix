@@ -1,3 +1,3 @@
-import { Shape } from "@repo/types";
+import { EventType } from "@repo/types";
 
-export const redo: Shape[][] = [];
+export const redo: EventType[] = [];
