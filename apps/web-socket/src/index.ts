@@ -1,23 +1,143 @@
-import { WebSocketServer } from 'ws';
-import type {Shape} from "@repo/types";
-
-interface RoomType {
-    roomId: string,
-    shapes: Shape[]
-}
+import { WebSocket, WebSocketServer } from 'ws';
+import type { RoomType, Shape, WSMessage } from "@repo/types";
 
 const wss = new WebSocketServer({ port: 8080 });
 
-const room: RoomType[] = [];
+const rooms = new Map<string, RoomType>();
 
-
-// Below is boilerplate code
 wss.on('connection', function connection(ws) {
   ws.on('error', console.error);
 
-  ws.on('message', function message(data) {
-    console.log('received: %s', data);
+  ws.on('message', function message(msg) {
+    const message: WSMessage = JSON.parse(msg.toString());
+
+    if (message.messageType === "create-room") {
+      let room = rooms.get(message.roomId);
+      if (room) {
+        ws.send(JSON.stringify({
+          messageType: "error",
+          msg: "Room already exists"
+        }))
+      } else {
+        let newSet: Set<WebSocket> = new Set();
+        newSet.add(ws);
+
+        rooms.set(message.roomId, {
+          roomId: message.roomId,
+          shapes: [],
+          clients: newSet
+        })
+      }
+
+    } else if (message.messageType === "join-room") {
+      let room = rooms.get(message.roomId);
+      if (room) {
+        room?.clients.add(ws);
+
+        ws.send(JSON.stringify({
+          messageType: "room-state",
+          shapes: room.shapes
+        }));
+
+      } else {
+        ws.send(JSON.stringify({
+          messageType: "error",
+          msg: "No such room exists"
+        }))
+      }
+    } else if (message.messageType === "room-state") {
+      let room = rooms.get(message.roomId);
+      if (room) {
+        ws.send(JSON.stringify({
+          messageType: "shapes",
+          shapes: room?.shapes
+        }))
+      } else {
+        ws.send(JSON.stringify({
+          messageType: "error",
+          msg: "No such room exists"
+        }))
+      }
+    } else if (message.messageType === "shape-operation") {
+      let room = rooms.get(message.roomId);
+      if (room !== undefined) {
+        let shapes = room.shapes;
+
+
+        if (message.payload.type === "insertion") {
+          if (shapes.includes(message.payload.updatedShape, 0) === false) {
+            shapes.push(message.payload.updatedShape);
+          }
+        } else if (message.payload.type === "updated") {
+          shapes = shapes.map((s) => {
+            if (s.id === message.payload.shapeId) {
+              return message.payload.updatedShape;
+            } else {
+              return s;
+            }
+          })
+        } else if (message.payload.type === "delete") {
+          shapes = shapes?.filter((s) => {
+            if (s.id === message.payload.shapeId)
+              return false;
+            return true;
+          })
+        }
+        room.shapes = shapes;
+
+        room.clients.forEach((x) => {
+          if (x !== ws) {
+            x.send(JSON.stringify({
+              messageType: "shape-operation",
+              payload: message.payload
+            }))
+          }
+        })
+
+      } else {
+        ws.send(JSON.stringify({
+          messageType: "error",
+          msg: "No such room exists"
+        }))
+      }
+
+    } else if (message.messageType === "leave-room") {
+      const room = rooms.get(message.roomId);
+      room?.clients.delete(ws);
+    }
+  });
+
+  ws.on("close", () => {
+    rooms.forEach(room => {
+      room.clients.delete(ws);
+    });
   });
 
   ws.send('something');
 });
+
+/*
+
+export interface RoomType {
+    roomId: string,
+    shapes: Shape[],
+    clients: Set<WebSocket>
+}
+
+export interface WSMessage {
+   roomId: string,
+   messageType: MessageType,
+   payload: any
+}
+
+export type MessageType = "create-room" | "join-room" | "room-state" | "shape-operation" | "leave-room";
+
+export interface EventType {
+    type: "updated" | "insertion" | "delete",
+    shapeId: string,
+    initialShape: Shape | undefined,
+    updatedShape: Shape | undefined
+}
+
+*/
+

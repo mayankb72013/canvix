@@ -8,10 +8,10 @@ export const toolSelected = atom<Types | Tools>({
     default: "select"
 })
 
-// export const shapeId = atom<number>({
-//     key: "shapeId",
-//     default: 0
-// })
+export const roomId = atom<string>({
+    key: "roomId",
+    default: undefined
+})
 
 export const shapeSelected = atom<Shape | undefined>({
     key: "shapeSelected",
