@@ -3,8 +3,8 @@
 import { MouseEvent, useState } from "react";
 import { useEffect, useRef } from "react";
 import { pencilDraw } from "../drawingLogic/pencil";
-import { useRecoilState, useRecoilValue } from "recoil";
-import { clearCanvas, cursorState, originalSnapshot, shapesArray, shapeSelected, strokeColor, strokeWidth, toolSelected, undoClicked, } from "../recoil/atoms";
+import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
+import { clearCanvas, cursorState, imageData, originalSnapshot, shapesArray, shapeSelected, strokeColor, strokeWidth, toolSelected, undoClicked, } from "../recoil/atoms";
 import { boxDraw } from "../drawingLogic/box";
 import { ellipseDraw } from "../drawingLogic/ellipse";
 import { lineDraw } from "../drawingLogic/line";
@@ -63,6 +63,8 @@ export default function Canvas() {
 
     const reDrawCanvas = useRedrawCanvas();
 
+    const setImage = useSetRecoilState(imageData);
+
 
     useEffect(() => {
         mainCtx.current = mainCanvas.current!.getContext('2d');
@@ -96,6 +98,8 @@ export default function Canvas() {
     useEffect(() => {
         mainCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
         reDrawCanvas(mainCtx, tempCtx, shapes, isResizing.current, isRotating.current);
+        let imageInfo: string | undefined = mainCanvas.current?.toDataURL("image/png");
+        setImage(imageInfo);
     }, [shapes]);
 
     useEffect(() => {
@@ -206,7 +210,7 @@ export default function Canvas() {
                     initialShape: initialShape,
                     updatedShape: selectedShape
                 }
-        
+
                 undo.push(pushEvent);
             }
         }
@@ -238,7 +242,7 @@ export default function Canvas() {
                         initialShape: undefined,
                         updatedShape: newShape
                     }
-            
+
                     undo.push(pushEvent);
                     return newShapes;
                 });
@@ -249,7 +253,7 @@ export default function Canvas() {
                 pencilDraw(mainCtx, startX.current, startY.current, currentPath.current as Path2D, false, currentStrokeColor, currentStrokeWidth);
 
             } else if (currentToolSelected === "box") {
-                
+
                 setShapes(prev => {
                     const newShape: Shape = {
                         id: shapesId,
@@ -270,7 +274,7 @@ export default function Canvas() {
                         initialShape: undefined,
                         updatedShape: newShape
                     }
-            
+
                     undo.push(pushEvent);
                     return newShapes;
                 });
@@ -280,7 +284,7 @@ export default function Canvas() {
                 tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
                 boxDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
             } else if (currentToolSelected === "ellipse") {
-                
+
                 setShapes(prev => {
                     const newShape: Shape = {
                         id: shapesId,
@@ -301,7 +305,7 @@ export default function Canvas() {
                         initialShape: undefined,
                         updatedShape: newShape
                     }
-            
+
                     undo.push(pushEvent);
                     return newShapes;
                 });
@@ -311,7 +315,7 @@ export default function Canvas() {
                 tempCtx.current!.clearRect(0, 0, window.innerWidth, window.innerHeight);
                 ellipseDraw(mainCtx, startX.current, startY.current, e.clientX, e.clientY, false, currentStrokeColor, currentStrokeWidth);
             } else if (currentToolSelected === "line") {
-                
+
                 setShapes(prev => {
                     const newShape: Shape = {
                         id: shapesId,
@@ -333,7 +337,7 @@ export default function Canvas() {
                         initialShape: undefined,
                         updatedShape: newShape
                     }
-            
+
                     undo.push(pushEvent);
                     return newShapes;
                 });

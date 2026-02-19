@@ -57,3 +57,8 @@ export const strokeWidth = atom({
     key: "strokeWidth",
     default: 4
 })
+
+export const imageData = atom<string | undefined>({
+    key: "imageData",
+    default: undefined
+})
