@@ -62,3 +62,8 @@ export const imageData = atom<string | undefined>({
     key: "imageData",
     default: undefined
 })
+
+export const webSocketConnection = atom<WebSocket>({
+    key: "webSocketConnection",
+    default: undefined
+})

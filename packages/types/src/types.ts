@@ -41,7 +41,7 @@ export interface RoomType {
 export interface WSMessage {
    roomId: string,
    messageType: MessageType,
-   payload: any
+   payload?: any
 }
 
 export type MessageType = "create-room" | "join-room" | "room-state" | "shape-operation" | "leave-room";

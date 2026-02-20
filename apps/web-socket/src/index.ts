@@ -16,7 +16,7 @@ wss.on('connection', function connection(ws) {
       if (room) {
         ws.send(JSON.stringify({
           messageType: "error",
-          msg: "Room already exists"
+          error: "Room already exists"
         }))
       } else {
         let newSet: Set<WebSocket> = new Set();
@@ -27,22 +27,34 @@ wss.on('connection', function connection(ws) {
           shapes: [],
           clients: newSet
         })
-      }
 
+        newSet.forEach((x) => {
+          x.send(JSON.stringify({
+            messageType: "room-state",
+            shapes: [],
+            clients: newSet.size,
+            roomId: message.roomId
+          }))
+        })
+      }
     } else if (message.messageType === "join-room") {
       let room = rooms.get(message.roomId);
       if (room) {
         room?.clients.add(ws);
 
-        ws.send(JSON.stringify({
-          messageType: "room-state",
-          shapes: room.shapes
-        }));
+        room.clients.forEach((x) => {
+          x.send(JSON.stringify({
+            messageType: "room-state",
+            shapes: room.shapes,
+            clients: room.clients.size,
+            roomId: message.roomId
+          }))
+        })
 
       } else {
         ws.send(JSON.stringify({
           messageType: "error",
-          msg: "No such room exists"
+          error: "No such room exists"
         }))
       }
     } else if (message.messageType === "room-state") {
@@ -55,7 +67,7 @@ wss.on('connection', function connection(ws) {
       } else {
         ws.send(JSON.stringify({
           messageType: "error",
-          msg: "No such room exists"
+          error: "No such room exists"
         }))
       }
     } else if (message.messageType === "shape-operation") {
@@ -97,23 +109,47 @@ wss.on('connection', function connection(ws) {
       } else {
         ws.send(JSON.stringify({
           messageType: "error",
-          msg: "No such room exists"
+          error: "No such room exists"
         }))
       }
 
     } else if (message.messageType === "leave-room") {
       const room = rooms.get(message.roomId);
       room?.clients.delete(ws);
+      if (room?.clients.size == 0) {
+        rooms.delete(message.roomId);
+      }
+
+      if (room !== undefined) {
+        room.clients.forEach((x) => {
+          x.send(JSON.stringify({
+            messageType: "clients",
+            clients: room.clients.size
+          }))
+        })
+      }
     }
   });
 
   ws.on("close", () => {
     rooms.forEach(room => {
       room.clients.delete(ws);
+      if (room?.clients.size == 0) {
+        rooms.delete(room.roomId);
+      }
+
+      room.clients.forEach((x) => {
+        x.send(JSON.stringify({
+          messageType: "clients",
+          clients: room.clients.size
+        }))
+      })
     });
   });
 
-  ws.send('something');
+  ws.send(JSON.stringify({
+    messageType: "connected"
+  }));
 });
 
 /*
