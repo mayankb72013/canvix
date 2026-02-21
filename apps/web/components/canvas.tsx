@@ -4,11 +4,11 @@ import { MouseEvent, useState } from "react";
 import { useEffect, useRef } from "react";
 import { pencilDraw } from "../drawingLogic/pencil";
 import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
-import { clearCanvas, cursorState, imageData, originalSnapshot, shapesArray, shapeSelected, strokeColor, strokeWidth, toolSelected, undoClicked, } from "../recoil/atoms";
+import { clearCanvas, cursorState, imageData, originalSnapshot, roomId, shapesArray, shapeSelected, strokeColor, strokeWidth, toolSelected, undoClicked, webSocketConnection, } from "../recoil/atoms";
 import { boxDraw } from "../drawingLogic/box";
 import { ellipseDraw } from "../drawingLogic/ellipse";
 import { lineDraw } from "../drawingLogic/line";
-import type { Shape, Point, EventType } from "@repo/types"
+import type { Shape, Point, EventType, WSMessage } from "@repo/types"
 import { undo } from "../app/undo-redo/undo";
 import { redo } from "../app/undo-redo/redo";
 import useSelect from "../tools/select";
@@ -64,6 +64,8 @@ export default function Canvas() {
     const reDrawCanvas = useRedrawCanvas();
 
     const setImage = useSetRecoilState(imageData);
+    const [webSocket, setWebSocket] = useRecoilState(webSocketConnection);
+    const [roomCode, setRoomCode] = useRecoilState(roomId);
 
 
     useEffect(() => {
@@ -125,6 +127,13 @@ export default function Canvas() {
             updatedShape: newSelectedShape
         }
         undo.push(pushEvent);
+
+        const message: WSMessage = {
+            messageType: "shape-operation",
+            roomId: roomCode,
+            payload: pushEvent
+        }
+        webSocket.send(JSON.stringify(message));
 
     }, [currentStrokeColor, currentStrokeWidth])
 
@@ -212,6 +221,13 @@ export default function Canvas() {
                 }
 
                 undo.push(pushEvent);
+
+                const message: WSMessage = {
+                    messageType: "shape-operation",
+                    roomId: roomCode,
+                    payload: pushEvent
+                }
+                webSocket.send(JSON.stringify(message));
             }
         }
         if (isPainting.current) {
@@ -242,8 +258,14 @@ export default function Canvas() {
                         initialShape: undefined,
                         updatedShape: newShape
                     }
-
                     undo.push(pushEvent);
+
+                    const message: WSMessage = {
+                        messageType: "shape-operation",
+                        roomId: roomCode,
+                        payload: pushEvent
+                    }
+                    webSocket.send(JSON.stringify(message));
                     return newShapes;
                 });
                 redo.length = 0;
@@ -276,6 +298,13 @@ export default function Canvas() {
                     }
 
                     undo.push(pushEvent);
+
+                    const message: WSMessage = {
+                        messageType: "shape-operation",
+                        roomId: roomCode,
+                        payload: pushEvent
+                    }
+                    webSocket.send(JSON.stringify(message));
                     return newShapes;
                 });
                 redo.length = 0;
@@ -307,6 +336,13 @@ export default function Canvas() {
                     }
 
                     undo.push(pushEvent);
+
+                    const message: WSMessage = {
+                        messageType: "shape-operation",
+                        roomId: roomCode,
+                        payload: pushEvent
+                    }
+                    webSocket.send(JSON.stringify(message));
                     return newShapes;
                 });
                 redo.length = 0;
@@ -339,6 +375,13 @@ export default function Canvas() {
                     }
 
                     undo.push(pushEvent);
+
+                    const message: WSMessage = {
+                        messageType: "shape-operation",
+                        roomId: roomCode,
+                        payload: pushEvent
+                    }
+                    webSocket.send(JSON.stringify(message));
                     return newShapes;
                 });
                 redo.length = 0;

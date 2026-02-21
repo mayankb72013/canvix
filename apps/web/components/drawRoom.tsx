@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRecoilState, useSetRecoilState } from "recoil";
 import { generateRoomId } from "../app/utils/roomId";
 import { roomId, shapesArray, webSocketConnection } from "../recoil/atoms";
-import { WSMessage } from "@repo/types";
+import { EventType, WSMessage } from "@repo/types";
 
 export default function DrawRoom() {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -13,7 +13,7 @@ export default function DrawRoom() {
     const [roomCode, setRoomCode] = useRecoilState(roomId);
     const [isJoiningRoom, setIsJoiningRoom] = useState(false);
     const [webSocket, setWebSocket] = useRecoilState(webSocketConnection);
-    const setShapes = useSetRecoilState(shapesArray);
+    const [shapes, setShapes] = useRecoilState(shapesArray);
     const [teammates, setTeammates] = useState<number>();
     const [error, setError] = useState("none");
 
@@ -30,7 +30,6 @@ export default function DrawRoom() {
 
         ws.onmessage = (message) => {
             const msg = JSON.parse(message.data);
-            console.log(msg);
 
             if (msg.messageType === "room-state") {
                 setTeammates(msg.clients);
@@ -41,10 +40,59 @@ export default function DrawRoom() {
 
             } else if (msg.messageType === "error") {
                 setError(msg.error);
-                setTimeout(()=>{
+                setTimeout(() => {
                     setError("none");
-                },2000)
+                }, 2000)
             } else if (msg.messageType === "shape-operation") {
+                const shapeOperation: EventType = msg.payload;
+
+                if (shapeOperation.type === "updated") {
+                    if (shapeOperation.updatedShape) {
+                        const updatedShape = shapeOperation.updatedShape;
+
+                        const newPath = new Path2D();
+                        if (updatedShape.type === "pencil" && updatedShape.pointsInPath) {
+                            newPath.moveTo(updatedShape.pointsInPath[0]?.x!, updatedShape.pointsInPath[0]?.y!);
+                            for (let i = 1; i < updatedShape.pointsInPath.length; i++) {
+                                newPath.lineTo(updatedShape.pointsInPath[i]?.x!, updatedShape.pointsInPath[i]?.y!);
+                            }
+                            updatedShape.path = newPath;
+                        }
+                        
+                        setShapes((shapes) => {
+                            return shapes.map((s) => {
+                                if (s.id === shapeOperation.shapeId) {
+                                    return updatedShape;
+                                } else {
+                                    return s;
+                                }
+                            })
+                        })
+                    }
+                } else if (shapeOperation.type === "insertion") {
+                    if (shapeOperation.updatedShape) {
+                        const updatedShape = shapeOperation.updatedShape;
+                        const newPath = new Path2D();
+                        if (updatedShape.type === "pencil" && updatedShape.pointsInPath) {
+                            newPath.moveTo(updatedShape.pointsInPath[0]?.x!, updatedShape.pointsInPath[0]?.y!);
+                            for (let i = 1; i < updatedShape.pointsInPath.length; i++) {
+                                newPath.lineTo(updatedShape.pointsInPath[i]?.x!, updatedShape.pointsInPath[i]?.y!);
+                            }
+                            updatedShape.path = newPath;
+                        }
+                        setShapes((shapes) => [...shapes, updatedShape]);
+
+                    }
+                } else if (shapeOperation.type === "delete") {
+                    setShapes((shapes) => {
+                        return shapes.filter((s) => {
+                            if (s.id === shapeOperation.shapeId) {
+                                return false;
+                            }
+                            return true;
+                        })
+                    });
+                }
 
             } else if (msg.messageType === "clients") {
                 setTeammates(msg.clients);
@@ -85,7 +133,7 @@ export default function DrawRoom() {
     }
 
     function handleStopSession() {
-        
+
         const message: WSMessage = {
             messageType: "leave-room",
             roomId: roomCode

@@ -38,9 +38,9 @@ export function useUndoHandler() {
             });
         } else if (last.type === "delete") {
             if (last.initialShape) {
-              newShapes = [...shapes, last.initialShape];
+                newShapes = [...shapes, last.initialShape];
             }
-          }
+        }
 
         setShapes(newShapes);
         setUndoClick(true);
