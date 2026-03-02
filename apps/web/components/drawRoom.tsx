@@ -25,7 +25,7 @@ export default function DrawRoom() {
         };
         window.addEventListener("keydown", handler);
 
-        const ws = new WebSocket("ws://localhost:8080");
+        const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL+"")
         setWebSocket(ws);
 
         ws.onmessage = (message) => {

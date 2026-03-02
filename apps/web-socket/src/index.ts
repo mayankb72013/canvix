@@ -1,7 +1,15 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import type { RoomType, Shape, WSMessage } from "@repo/types";
+import dotenv from "dotenv"
+import http from 'http'
 
-const wss = new WebSocketServer({ port: 8080 });
+dotenv.config();
+
+const PORT = parseInt(process.env.PORT+"");
+
+const server = http.createServer();
+
+const wss = new WebSocketServer({ server });
 
 const rooms = new Map<string, RoomType>();
 
@@ -150,6 +158,10 @@ wss.on('connection', function connection(ws) {
   ws.send(JSON.stringify({
     messageType: "connected"
   }));
+});
+
+server.listen(PORT,() => {
+  console.log("Server running on port", PORT);
 });
 
 /*
