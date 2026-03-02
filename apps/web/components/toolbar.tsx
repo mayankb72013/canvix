@@ -4,7 +4,7 @@ import Box from "@repo/ui/box";
 import Pencil from "@repo/ui/pencil";
 import { useSetRecoilState } from "recoil";
 import { clearCanvas, cursorState, toolSelected } from "../recoil/atoms";
-import Ellipse from "@repo/ui/ellipse";
+import Ellipse from "@repo/ui/circle";
 import Line from "@repo/ui/line";
 import Text from "@repo/ui/text";
 import SelectionTool from "@repo/ui/selection_arrow";
