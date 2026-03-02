@@ -5,7 +5,7 @@ import http from 'http'
 
 dotenv.config();
 
-const PORT = parseInt(process.env.PORT+"");
+const PORT = parseInt(process.env.PORT+"") || 8080;
 
 const server = http.createServer();
 
