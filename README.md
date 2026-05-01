@@ -170,4 +170,4 @@ packages/
 
 ## License
 
-MIT
+MIT: License
